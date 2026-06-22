@@ -1,0 +1,35 @@
+{
+  "lastSynced": "2026-06-22T04:12:33.883Z",
+  "notebooks": [
+    {
+      "id": "768038d7-47a2-44ef-8968-61a89062909a",
+      "blocks": [
+        {
+          "id": "1362d679-5fa2-4cb3-9b83-5f8f76c5e141",
+          "type": "code",
+          "content": "// index.ts\nimport { StrictMode } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport './index.css'\nimport App from './App.tsx'\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <App />\n  </StrictMode>,\n)\n\n"
+        },
+        {
+          "id": "9a9e084e-34b0-4481-9e38-0468c0149ee8",
+          "type": "image",
+          "content": ""
+        }
+      ],
+      "headerTitle": "blockPrint",
+      "coverImage": "768038d7-47a2-44ef-8968-61a89062909a"
+    },
+    {
+      "id": "0d7dcb42-2416-4181-b84a-59e5095a4dc3",
+      "name": "New Notebook",
+      "headerTitle": "Untitled Notebook",
+      "blocks": [
+        {
+          "id": "835ad9a9-c3a0-47f1-b96a-323b37de677b",
+          "type": "h1",
+          "content": "Flawlessly... Beautiful."
+        }
+      ],
+      "coverImage": "0d7dcb42-2416-4181-b84a-59e5095a4dc3"
+    }
+  ]
+}

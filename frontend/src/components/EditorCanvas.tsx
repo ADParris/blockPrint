@@ -19,8 +19,10 @@ export const EditorCanvas: React.FC = () => {
     updateBlockContent,
   } = useCanvasStore((state) => state);
 
+  // 1. Get the notebook reference (might be undefined initially)
   const notebook = getActiveNotebook();
 
+  // 2. Fetch Modal store configurations
   const {
     activeMenuId,
     openMenu,
@@ -32,51 +34,62 @@ export const EditorCanvas: React.FC = () => {
     closeMenu();
   }, [closeMenu]);
 
+  // 3. Initialize your keyboard controller
+  // 🛡️ Safe Option: If notebook is missing, we pass an empty array '[]' so it doesn't crash!
   const { handleKeyDown } = useCanvasKeyboard({
-    blocks: notebook.blocks,
+    blocks: notebook ? notebook.blocks : [],
     activeBlockId,
     setActiveBlockId,
     insertBlockAtIndex,
     deleteBlock,
     updateBlockContent,
-    isOpen: activeMenuId === 'canvas-command', // From command menu state
-    openMenu: (position) => openMenu('canvas-command', position), // From command menu state
-    handleClose, // From command menu state
+    isOpen: activeMenuId === 'canvas-command',
+    openMenu: (position) => openMenu('canvas-command', position),
+    handleClose,
   });
 
+  // 4. 🛡️ The Guard Gate! All hooks have run, so now it is 100% legal to return early.
+  if (!notebook) {
+    return (
+      <div className="flex h-full items-center justify-center text-slate-400">
+        <div className="text-center">
+          <p className="font-medium">No notebook selected</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Select a notebook from the sidebar to begin editing.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. Normal UI Event Handlers (Safe to assume notebook exists below this line)
   const handleCanvasClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
 
-    // 💡 1. Catch if the user clicked our drag handle (Check this first!)
     const dragHandle = target.closest('[data-drag-handle-for]');
     if (dragHandle) {
       const targetBlockId = dragHandle.getAttribute('data-drag-handle-for');
       if (targetBlockId) {
         e.stopPropagation();
-
-        // Set this block as active so the menu knows who to mutate
         setActiveBlockId(targetBlockId);
 
-        // Position the menu right next to the drag handle button
         const rect = dragHandle.getBoundingClientRect();
         const top = window.scrollY + rect.bottom + 4;
         const left = window.scrollX + rect.left;
 
         openMenu('canvas-command', { top, left });
-        return; // 🛑 Stop here. Don't evaluate background click rules.
+        return;
       }
     }
 
-    // 2. If clicking inside a text or code cell, ignore background logic
     if (
       target.closest('[data-block-id]') ||
       target.closest('.group\\/code') ||
-      target.closest('.header-group') // 🎯 Protects the entire header container bounds
+      target.closest('.header-group')
     ) {
       return;
     }
 
-    // 3. Clear active focus if clicking empty canvas while a block is active
     if (activeBlockId !== '') {
       setActiveBlockId('');
       if (document.activeElement instanceof HTMLElement) {
@@ -85,7 +98,6 @@ export const EditorCanvas: React.FC = () => {
       return;
     }
 
-    // 4. Spawn a new block at the bottom if clicking below the last block
     const allBlocks = document.querySelectorAll('[data-block-id]');
     const lastBlock = allBlocks[allBlocks.length - 1];
 

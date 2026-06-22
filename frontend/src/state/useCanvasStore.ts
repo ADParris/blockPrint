@@ -23,9 +23,14 @@ export interface Notebook {
 }
 
 export interface CanvasState {
+  // Variables
   notebooks: Notebook[];
   activeNotebookId: string;
   activeBlockId: string;
+  // Backend Sync
+  loadFromBackend: () => Promise<void>;
+  isLoading: boolean;
+  syncToBackend: () => Promise<void>;
   // Navigation & Management
   setActiveNotebookId: (id: string) => void;
   createNotebook: () => string; // Returns the new notebook's ID
@@ -64,6 +69,56 @@ const useCanvasStore = create<CanvasState>()(
           ],
         },
       ],
+      //Backend actions
+      loadFromBackend: async () => {
+        try {
+          const response = await fetch('http://localhost:3001/api/load');
+          if (!response.ok) throw new Error('Failed to fetch backend data');
+
+          const data = await response.json();
+
+          if (data.notebooks && data.notebooks.length > 0) {
+            set({
+              notebooks: data.notebooks,
+              // 🎯 Instantly set a valid active pointer to the first notebook!
+              activeNotebookId: data.notebooks[0].id,
+            });
+            console.log('📖 Notebooks successfully loaded from disk server!');
+          }
+        } catch (error) {
+          console.error('❌ Failed to seed state from backend:', error);
+        } finally {
+          set({ isLoading: false }); // Holding the door open until everything above is ready
+        }
+      },
+
+      isLoading: true,
+
+      syncToBackend: async () => {
+        // 1. Grab the top-level notebooks array
+        const { notebooks } = get();
+
+        try {
+          const response = await fetch('http://localhost:3001/api/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              lastSynced: new Date().toISOString(),
+              notebooks: notebooks,
+            }),
+          });
+
+          if (!response.ok) throw new Error('Network response was not ok');
+
+          const data = await response.json();
+          console.log('📡 Background Sync:', data.message);
+        } catch (error) {
+          console.error('❌ Background sync failed:', error);
+        }
+      },
+
       // Notebook actions
       createNotebook: () => {
         const newNotebookId = crypto.randomUUID();
@@ -251,5 +306,40 @@ const useCanvasStore = create<CanvasState>()(
     },
   ),
 );
+
+let syncTimeout: ReturnType<typeof setTimeout> | undefined;
+// 🎯 Keep a reference tracker outside the function
+let lastSavedNotebooksJson = '';
+
+useCanvasStore.subscribe((state) => {
+  const notebooks = state.notebooks;
+
+  // 🛡️ Safety Gate 1: Skip if empty or not loaded yet
+  if (!notebooks || notebooks.length === 0) return;
+
+  // 🎯 Stringify the array to check if the actual CONTENT changed
+  const currentJson = JSON.stringify(notebooks);
+
+  // 🛡️ Safety Gate 2: If this is the initial boot up load, prime the tracker and get out!
+  if (!lastSavedNotebooksJson) {
+    lastSavedNotebooksJson = currentJson;
+    return;
+  }
+
+  // 🛡️ Safety Gate 3: If the notebooks content is exactly identical, change nothing!
+  if (currentJson === lastSavedNotebooksJson) return;
+
+  // If we made it past all guards, the user actually edited something!
+  lastSavedNotebooksJson = currentJson;
+
+  clearTimeout(syncTimeout);
+
+  syncTimeout = setTimeout(() => {
+    useCanvasStore.getState().syncToBackend();
+  }, 2500);
+});
+
+// Seed the application state immediately on script execution
+useCanvasStore.getState().loadFromBackend();
 
 export default useCanvasStore;
