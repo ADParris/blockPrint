@@ -2,19 +2,14 @@ import React, { useEffect, useRef } from 'react';
 
 interface ModalProps {
   children: React.ReactNode;
-  handleClose: () => void;
-  left?: number;
+  onClose: () => void;
   menuPosition?: {
     top: number;
     left: number;
   } | null;
 }
 
-const Modal: React.FC<ModalProps> = ({
-  menuPosition,
-  children,
-  handleClose,
-}) => {
+const Modal: React.FC<ModalProps> = ({ menuPosition, children, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   const positioningStyle: React.CSSProperties =
@@ -39,12 +34,12 @@ const Modal: React.FC<ModalProps> = ({
         modalRef.current &&
         !modalRef.current.contains(event.target as Node)
       ) {
-        handleClose();
+        onClose();
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') handleClose();
+      if (event.key === 'Escape') onClose();
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -54,7 +49,7 @@ const Modal: React.FC<ModalProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleClose]);
+  }, [onClose]);
 
   // 2. Reusable Visual Wrapper + Dynamic Positioning
   return (

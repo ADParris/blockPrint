@@ -1,35 +1,68 @@
 {
-  "lastSynced": "2026-06-22T04:12:33.883Z",
+  "lastSynced": "2026-06-24T03:54:38.981Z",
   "notebooks": [
     {
-      "id": "768038d7-47a2-44ef-8968-61a89062909a",
-      "blocks": [
-        {
-          "id": "1362d679-5fa2-4cb3-9b83-5f8f76c5e141",
-          "type": "code",
-          "content": "// index.ts\nimport { StrictMode } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport './index.css'\nimport App from './App.tsx'\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <App />\n  </StrictMode>,\n)\n\n"
-        },
-        {
-          "id": "9a9e084e-34b0-4481-9e38-0468c0149ee8",
-          "type": "image",
-          "content": ""
-        }
-      ],
-      "headerTitle": "blockPrint",
-      "coverImage": "768038d7-47a2-44ef-8968-61a89062909a"
-    },
-    {
-      "id": "0d7dcb42-2416-4181-b84a-59e5095a4dc3",
+      "id": "fe87612c-c4e9-4623-99fa-e212d77c3dc1",
       "name": "New Notebook",
       "headerTitle": "Untitled Notebook",
+      "coverImage": "",
+      "layoutMode": "spatial-canvas",
       "blocks": [
         {
-          "id": "835ad9a9-c3a0-47f1-b96a-323b37de677b",
-          "type": "h1",
-          "content": "Flawlessly... Beautiful."
+          "id": "df44b440-05a8-43a3-9208-8170229fb2c0",
+          "type": "p",
+          "content": "Block A",
+          "position": {
+            "x": 120,
+            "y": 120
+          },
+          "connections": [
+            "106f29d3-0495-42ca-87d0-2894ce7338c3",
+            "2e174b76-19ec-4dfd-9984-2e2bb2aedb11"
+          ]
+        },
+        {
+          "id": "106f29d3-0495-42ca-87d0-2894ce7338c3",
+          "type": "p",
+          "content": "Block B",
+          "position": {
+            "x": 640,
+            "y": 120
+          },
+          "connections": [
+            "bca7ab61-2f25-4b1c-a1c4-7900542a2a95",
+            "df44b440-05a8-43a3-9208-8170229fb2c0"
+          ]
+        },
+        {
+          "id": "bca7ab61-2f25-4b1c-a1c4-7900542a2a95",
+          "type": "p",
+          "content": "Block C",
+          "position": {
+            "x": 640,
+            "y": 560
+          },
+          "connections": [
+            "2e174b76-19ec-4dfd-9984-2e2bb2aedb11",
+            "106f29d3-0495-42ca-87d0-2894ce7338c3",
+            "df44b440-05a8-43a3-9208-8170229fb2c0"
+          ]
+        },
+        {
+          "id": "2e174b76-19ec-4dfd-9984-2e2bb2aedb11",
+          "type": "p",
+          "content": "Block D",
+          "position": {
+            "x": 120,
+            "y": 560
+          },
+          "connections": [
+            "df44b440-05a8-43a3-9208-8170229fb2c0",
+            "bca7ab61-2f25-4b1c-a1c4-7900542a2a95",
+            "106f29d3-0495-42ca-87d0-2894ce7338c3"
+          ]
         }
-      ],
-      "coverImage": "0d7dcb42-2416-4181-b84a-59e5095a4dc3"
+      ]
     }
   ]
 }

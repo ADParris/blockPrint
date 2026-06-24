@@ -1,11 +1,11 @@
-import type { BlockType } from '../state/useCanvasStore';
-import useCanvasStore from '../state/useCanvasStore';
-import useModalStore from '../state/useModalStore';
+import type { BlockType } from '../state/types';
+import { useCanvasStore } from '../state/useCanvasStore';
+import { useModalStore } from '../state/useModalStore';
 
 interface CommandItem {
   label: string;
   labelStyle: string;
-  type: BlockType; // 👈 Enforce your store's strict BlockType here
+  type: BlockType;
 }
 
 const BlockCommandMenu: React.FC = () => {

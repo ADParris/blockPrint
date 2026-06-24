@@ -8,13 +8,10 @@ interface ImageBlockProps {
   variant?: 'block' | 'cover';
 }
 
-// 🎨 Add this right above your ImageBlock component definition
 function useImageBlob(content: string) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  // 1. Synchronously reset the state during rendering if content is cleared.
-  // This completely cuts out the synchronous effect execution!
   const [prevContent, setPrevContent] = useState(content);
+
   if (content !== prevContent) {
     setPrevContent(content);
     if (!content) {
@@ -23,7 +20,6 @@ function useImageBlob(content: string) {
   }
 
   useEffect(() => {
-    // 2. The effect now ONLY handles the asynchronous external database lookup
     if (!content) return;
 
     let isMounted = true;
@@ -56,7 +52,7 @@ function useImageBlob(content: string) {
   return content ? previewUrl : null;
 }
 
-export const ImageBlock: React.FC<ImageBlockProps> = ({
+const ImageBlock: React.FC<ImageBlockProps> = ({
   blockId,
   content,
   onContentChange,
@@ -65,7 +61,6 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const previewUrl = useImageBlob(content);
 
-  // 🔄 Process file binary selection, store to IDB, and lift key state up
   const processFile = async (file: File) => {
     if (file && file.type.startsWith('image/')) {
       try {
@@ -91,40 +86,44 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
 
   const isCover = variant === 'cover';
 
+  // If it's a cover image and has no content yet, return null.
+  // NotebookHeader will handle rendering its own "Add cover" action trigger.
+  if (isCover && !previewUrl) return null;
+
   return (
-    /* 🎯 wrapper spans full-width unconditionally */
-    <div className={`w-full ${isCover ? 'mb-6' : 'my-4'}`}>
+    <div className={`w-full ${isCover ? '' : 'my-4'}`}>
       {previewUrl ? (
         <div
-          className={`relative group overflow-hidden border border-slate-800/60 bg-[#1e1e1e] shadow-xl w-full ${
-            /* 📐 Keep w-full for block uniformity, but toggle heights/corners cleanly */
+          className={`relative overflow-hidden w-full ${
             isCover
-              ? 'h-48 rounded-xl'
-              : 'min-h-32 max-h-100 rounded-lg flex items-center justify-center p-4'
+              ? 'h-48' // NotebookHeader handles the outer borders, rounding, and group selectors
+              : 'relative group border border-slate-800/60 bg-[#1e1e1e] shadow-xl min-h-32 max-h-100 rounded-lg flex items-center justify-center p-4'
           }`}
         >
           <img
             src={previewUrl}
             alt={isCover ? 'Cover banner' : 'Canvas media content'}
             className={`block ${
-              /* ✨ Center inline images using max limits, let cover stretch full bleed */
               isCover
                 ? 'w-full h-full object-cover'
                 : 'max-w-full max-h-92 object-contain'
             }`}
           />
-          {/* Hover overlay - matches the exact uniform container dimensions */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-            <button
-              onClick={() => onContentChange(blockId, '')}
-              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-sm font-medium transition-colors shadow-lg"
-            >
-              Remove Image
-            </button>
-          </div>
+
+          {/* Only render the deletion overlay if it's a standard document/canvas block! */}
+          {!isCover && (
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+              <button
+                onClick={() => onContentChange(blockId, '')}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-sm font-medium transition-colors shadow-lg cursor-pointer"
+              >
+                Remove Image
+              </button>
+            </div>
+          )}
         </div>
       ) : (
-        /* Dropzone */
+        /* Standard Inline Block Dropzone */
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -140,7 +139,7 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
             isDragging
               ? 'border-indigo-500 bg-indigo-500/5'
               : 'border-slate-800 hover:border-slate-700 bg-slate-900/10'
-          } ${isCover ? 'h-48' : 'p-8 min-h-32'}`}
+          } p-8 min-h-32`}
         >
           <input
             id={`file-upload-${blockId}`}
@@ -150,12 +149,12 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
             onChange={handleFileChange}
           />
           <span className="text-sm text-slate-400 font-medium">
-            {isCover
-              ? '📷 Drop or click to add a cover image'
-              : 'Drag & drop an image here, or click to upload'}
+            Drag & drop an image here, or click to upload
           </span>
         </div>
       )}
     </div>
   );
 };
+
+export default ImageBlock;

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { codeToHtml } from 'shiki';
-import type { Block, BlockType } from '../state/useCanvasStore';
-import useCanvasStore from '../state/useCanvasStore';
-import { ImageBlock } from './ImageBlock';
+import type { CanvasBlock, BlockType } from '../state/types';
+import { useCanvasStore } from '../state/useCanvasStore';
+import ImageBlock from './ImageBlock';
 
 interface BlockProps {
-  block: Block;
+  block: CanvasBlock;
 }
 
 const BlockRenderer: React.FC<BlockProps> = ({ block }) => {

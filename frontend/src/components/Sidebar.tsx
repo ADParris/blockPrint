@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
-import useCanvasStore from '../state/useCanvasStore';
+import { useCanvasStore } from '../state/useCanvasStore';
 import Modal from './Modal'; // Import your reusable Modal
+import { SidebarLayoutToggle } from './SidebarLayoutToggle';
 import SortableList from './SortableList';
 
 const Sidebar = () => {
@@ -62,81 +63,86 @@ const Sidebar = () => {
       </div>
 
       {/* Reordering List Container */}
-      <nav className="space-y-1 flex-1 overflow-y-auto">
-        <SortableList
-          items={notebookTitles}
-          onMoveItem={moveNotebookToIndex}
-          renderItem={(notebook) => {
-            const isActive = notebook.id === activeNotebookId;
+      <nav className="flex flex-col h-[calc(100vh-140px)] mt-4">
+        <div className="flex-1 overflow-y-auto space-y-1">
+          <SortableList
+            items={notebookTitles}
+            onMoveItem={moveNotebookToIndex}
+            renderItem={(notebook) => {
+              const isActive = notebook.id === activeNotebookId;
 
-            return (
-              <div
-                key={notebook.id}
-                className="group relative flex items-center w-full mb-1"
-              >
-                <button
-                  onClick={() => {
-                    setActiveNotebookId(notebook.id);
-                    setActiveMenu(null); // Close any hanging menus on switch
-                  }}
-                  className={`flex items-center w-full text-left pl-3 pr-8 py-2 text-sm rounded-md transition-all duration-150 truncate ${
-                    isActive
-                      ? 'bg-slate-900 text-slate-100 font-bold shadow-sm'
-                      : 'text-slate-400 hover:bg-slate-900/40 hover:text-slate-200'
-                  }`}
-                >
-                  <span
-                    data-drag-handle-for={notebook.id}
-                    draggable="true"
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/plain', notebook.id);
-                      e.dataTransfer.effectAllowed = 'move';
-                      setActiveMenu(null); // Close active menu when drag starts
-                    }}
-                    className={`mr-2 cursor-grab active:cursor-grabbing transition-colors duration-150 ${
-                      isActive
-                        ? 'text-blue-400'
-                        : 'text-slate-600 group-hover:text-slate-400'
-                    }`}
-                  >
-                    📓
-                  </span>
-
-                  <span className="truncate">
-                    {notebook.title || 'Untitled'}
-                  </span>
-                </button>
-
-                {/* Floating Three-Dots Button Menu */}
+              return (
                 <div
-                  className={`absolute right-2 transition-opacity duration-150 ${
-                    activeMenu?.notebookId === notebook.id
-                      ? 'opacity-100'
-                      : 'opacity-0 group-hover:opacity-100'
-                  }`}
+                  key={notebook.id}
+                  className="group relative flex items-center w-full mb-1"
                 >
                   <button
-                    onClick={(e) => handleMenuClick(e, notebook.id)}
-                    className={`flex items-center justify-center w-5 h-5 rounded transition-colors text-xs font-bold ${
-                      activeMenu?.notebookId === notebook.id
-                        ? 'bg-slate-800 text-slate-200'
-                        : 'hover:bg-slate-800 text-slate-500 hover:text-slate-300'
+                    onClick={() => {
+                      setActiveNotebookId(notebook.id);
+                      setActiveMenu(null); // Close any hanging menus on switch
+                    }}
+                    className={`flex items-center w-full text-left pl-3 pr-8 py-2 text-sm rounded-md transition-all duration-150 truncate ${
+                      isActive
+                        ? 'bg-slate-900 text-slate-100 font-bold shadow-sm'
+                        : 'text-slate-400 hover:bg-slate-900/40 hover:text-slate-200'
                     }`}
-                    title="Notebook options"
                   >
-                    &#8942;
+                    <span
+                      data-drag-handle-for={notebook.id}
+                      draggable="true"
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', notebook.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setActiveMenu(null); // Close active menu when drag starts
+                      }}
+                      className={`mr-2 cursor-grab active:cursor-grabbing transition-colors duration-150 ${
+                        isActive
+                          ? 'text-blue-400'
+                          : 'text-slate-600 group-hover:text-slate-400'
+                      }`}
+                    >
+                      📓
+                    </span>
+
+                    <span className="truncate">
+                      {notebook.title || 'Untitled'}
+                    </span>
                   </button>
+
+                  {/* Floating Three-Dots Button Menu */}
+                  <div
+                    className={`absolute right-2 transition-opacity duration-150 ${
+                      activeMenu?.notebookId === notebook.id
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <button
+                      onClick={(e) => handleMenuClick(e, notebook.id)}
+                      className={`flex items-center justify-center w-5 h-5 rounded transition-colors text-xs font-bold ${
+                        activeMenu?.notebookId === notebook.id
+                          ? 'bg-slate-800 text-slate-200'
+                          : 'hover:bg-slate-800 text-slate-500 hover:text-slate-300'
+                      }`}
+                      title="Notebook options"
+                    >
+                      &#8942;
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          }}
-        />
+              );
+            }}
+          />
+        </div>
+        <div className="pt-4 border-t border-slate-800/60 mt-auto">
+          <SidebarLayoutToggle />
+        </div>
       </nav>
 
       {/* 💡 Mounted Portal/Modal for the dropdown content */}
       {activeMenu && (
         <Modal
-          handleClose={() => setActiveMenu(null)}
+          onClose={() => setActiveMenu(null)}
           menuPosition={activeMenu.position}
         >
           <div className="w-36 p-1 flex flex-col text-left">
