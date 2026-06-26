@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { idbStorage } from '../api/idbStorage';
 import { createCanvasSlice } from './canvasSlice';
 import { createDocumentSlice } from './documentSlice';
+import { createImageSlice } from './imageSlice';
 import { createNotebookSlice } from './notebookSlice';
 import type { CanvasState } from './types';
 import { LayoutMode } from './types';
@@ -34,10 +35,21 @@ export const useCanvasStore = create<CanvasState>()(
       ...createCanvasSlice(set, get),
       ...createNotebookSlice(set, get),
       ...createDocumentSlice(set, get),
+      ...createImageSlice(set, get),
     }),
     {
       name: 'notebook-storage',
       storage: createJSONStorage(() => idbStorage),
+      // 🎯 Filter out the image cache from being written to persistent storage
+      partialize: (state) => {
+        const stateCopy = { ...state };
+
+        // Use standard Record utility typing to safely delete the property
+        // without triggering an "unused variable" warning or an "any" error
+        delete (stateCopy as Record<string, unknown>).imageCache;
+
+        return stateCopy as Omit<CanvasState, 'imageCache'>;
+      },
     },
   ),
 );

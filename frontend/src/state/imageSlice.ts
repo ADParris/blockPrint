@@ -1,0 +1,39 @@
+import type { StoreSlice } from './types';
+
+export interface ImageSlice {
+  imageCache: Record<string, string>;
+  setImageCacheUrl: (blockId: string, url: string) => void;
+  clearImageCache: () => void;
+}
+
+// 🎯 Using our clean, uniform team-defined slice type wrapper!
+export const createImageSlice: StoreSlice<ImageSlice> = (set) => ({
+  imageCache: {},
+
+  setImageCacheUrl: (blockId, url) =>
+    set((state) => {
+      const newCache = { ...state.imageCache };
+
+      // 🎯 If an empty string is passed, cleanly evict the key from the cache map
+      if (!url) {
+        delete newCache[blockId];
+      } else {
+        newCache[blockId] = url;
+      }
+
+      return { imageCache: newCache };
+    }),
+
+  clearImageCache: () => {
+    set((state) => {
+      Object.values(state.imageCache).forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error('Failed to revoke image object URL:', err);
+        }
+      });
+      return { imageCache: {} };
+    });
+  },
+});

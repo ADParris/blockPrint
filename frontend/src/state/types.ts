@@ -1,4 +1,11 @@
 // src/state/types.ts
+export type AnchorDirection = 'top' | 'right' | 'bottom' | 'left';
+
+export interface BlockConnection {
+  targetId: string;
+  sourceDir: AnchorDirection;
+}
+
 export type BlockType = 'h1' | 'h2' | 'h3' | 'p' | 'code' | 'image';
 
 export const LayoutMode = {
@@ -26,7 +33,7 @@ export interface BaseBlock {
 // Our unified block structure supporting both modes
 export interface CanvasBlock extends BaseBlock {
   position?: { x: number; y: number };
-  connections?: string[];
+  connections?: BlockConnection[];
 }
 
 export interface Notebook {
@@ -45,6 +52,7 @@ export interface CanvasState {
   activeNotebookId: string;
   activeBlockId: string;
   isLoading: boolean;
+  imageCache: Record<string, string>;
 
   // Ephemeral Infinite Grid Viewport States
   cameraOffset: XYPosition;
@@ -84,8 +92,16 @@ export interface CanvasState {
   ) => void;
   setZoomScale: (scale: number | ((prev: number) => number)) => void;
   updateBlockPosition: (id: string, position: XYPosition) => void;
-  addBlockConnection: (sourceId: string, targetId: string) => void;
+  addBlockConnection: (
+    sourceId: string,
+    targetId: string,
+    sourceDir: AnchorDirection,
+  ) => void;
   removeBlockConnection: (sourceId: string, targetId: string) => void;
+
+  // 🖼️ Image Cache Actions
+  setImageCacheUrl: (blockId: string, url: string) => void;
+  clearImageCache: () => void;
 }
 
 export type StoreSlice<T> = (

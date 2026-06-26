@@ -27,7 +27,7 @@ const SpatialCard: React.FC<SpatialCardProps> = ({
         top: `${posY}px`,
         cursor: isPanning ? 'grabbing' : 'grab',
       }}
-      className={`group w-64 bg-slate-900 border border-slate-800 p-4 rounded-xl text-slate-200 text-sm transition-shadow duration-100 ${
+      className={`group w-64 bg-slate-900 border border-slate-800 p-4 rounded-xl text-slate-200 text-sm transition-shadow duration-100 pointer-events-auto ${
         isActiveDrag ? 'shadow-2xl ring-2 ring-blue-500/50' : 'shadow-xl'
       }`}
     >

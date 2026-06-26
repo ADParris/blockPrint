@@ -51,7 +51,9 @@ const DocumentCanvas: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto pt-12 pb-24">
+      {' '}
+      {/* 👈 Added top padding here */}
       <div
         className="max-w-3xl mx-auto flex flex-col gap-2 pointer-events-auto"
         onBlur={handleContentChange}

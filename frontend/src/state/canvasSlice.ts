@@ -1,4 +1,4 @@
-import type { LayoutModeType, StoreSlice } from './types';
+import type { AnchorDirection, LayoutModeType, StoreSlice } from './types';
 
 export interface CanvasSlice {
   setLayoutMode: (mode: LayoutModeType) => void;
@@ -16,7 +16,11 @@ export interface CanvasSlice {
   ) => void;
 
   // 🎯 Updated signatures to match our 2-argument implementation contract!
-  addBlockConnection: (sourceId: string, targetId: string) => void;
+  addBlockConnection: (
+    sourceId: string,
+    targetId: string,
+    sourceDir: AnchorDirection,
+  ) => void;
   removeBlockConnection: (sourceId: string, targetId: string) => void;
 }
 
@@ -73,7 +77,7 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
     }));
   },
 
-  addBlockConnection: (sourceId, targetId) => {
+  addBlockConnection: (sourceId, targetId, sourceDir) => {
     set((state) => {
       const updatedNotebooks = state.notebooks.map((notebook) => {
         if (notebook.id !== state.activeNotebookId) return notebook;
@@ -83,13 +87,17 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
           blocks: notebook.blocks.map((block) => {
             if (block.id !== sourceId) return block;
 
-            // Prevent duplicate connections
             const currentConnections = block.connections ?? [];
-            if (currentConnections.includes(targetId)) return block;
+
+            // 🎯 FIX: Check if an object with this exact target and direction already exists
+            const exists = currentConnections.some(
+              (c) => c.targetId === targetId && c.sourceDir === sourceDir,
+            );
+            if (exists) return block;
 
             return {
               ...block,
-              connections: [...currentConnections, targetId],
+              connections: [...currentConnections, { targetId, sourceDir }],
             };
           }),
         };
@@ -109,10 +117,13 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
           blocks: notebook.blocks.map((block) => {
             if (block.id !== sourceId) return block;
 
+            const currentConnections = block.connections ?? [];
+
+            // 🎯 FIX: Filter out by checking the targetId property inside the object
             return {
               ...block,
-              connections: (block.connections ?? []).filter(
-                (id) => id !== targetId,
+              connections: currentConnections.filter(
+                (c) => c.targetId !== targetId,
               ),
             };
           }),

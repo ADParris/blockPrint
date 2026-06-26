@@ -51,7 +51,7 @@ const SpatialCanvas: React.FC = () => {
 
       {/* 🚀 The Transforming Stage */}
       <div
-        className="absolute inset-0 origin-top-left pointer-events-none"
+        className="relative w-full h-full min-h-screen"
         style={{
           transform: `translate(${cameraOffset.x}px, ${cameraOffset.y}px) scale(${zoomScale})`,
         }}
@@ -65,7 +65,7 @@ const SpatialCanvas: React.FC = () => {
         />
 
         {/* Card Component Wrapper Layer */}
-        <div className="pointer-events-auto relative w-full h-full">
+        <div className="absolute inset-0 pointer-events-none z-10">
           {activeNotebook.blocks.map((block, index) => (
             <Card
               key={block.id}

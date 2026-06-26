@@ -1,7 +1,7 @@
 // components/SpatialCanvas/useSpatialMouse.ts
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import type { AnchorDirection, CanvasBlock } from '../state/types';
 import { useCanvasStore } from '../state/useCanvasStore';
-import type { CanvasBlock } from '../state/types';
 
 interface UseSpatialMouseProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -39,8 +39,11 @@ export const useSpatialMouse = ({
   const addBlockConnection = useCanvasStore(
     (state) => state.addBlockConnection,
   );
+  // 🎯 Need this to delete the old route when a user picks up an existing arrow tip!
+  const removeBlockConnection = useCanvasStore(
+    (state) => state.removeBlockConnection,
+  );
 
-  // Background pattern string optimization
   const bgFill = useMemo(
     () => `url(#dot-grid-${Math.round(zoomScale * 100)})`,
     [zoomScale],
@@ -48,11 +51,55 @@ export const useSpatialMouse = ({
 
   // 🛠️ Mouse Down Event Handler
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 2) return;
     const target = e.target as HTMLElement;
+
+    // 🎯 FEATURE: Left-Click Reconnecting an Existing Arrow
+    const arrowLine = target.closest('[data-connection-id]');
+    if (e.button === 0 && arrowLine) {
+      const connectionId = arrowLine.getAttribute('data-connection-id')!;
+      const parts = connectionId.split('__');
+
+      if (parts.length >= 3) {
+        e.stopPropagation();
+
+        const sourceId = parts[1]; // Clean source UUID
+        const targetId = parts[2]; // Clean target UUID
+
+        const sourceBlock = blocks.find((b) => b.id === sourceId);
+
+        if (sourceBlock) {
+          // 🎯 FIX: Find the actual connection record to preserve its original anchor face direction!
+          const existingConn = sourceBlock.connections?.find(
+            (c) => c.targetId === targetId,
+          );
+          const originalDirection = existingConn?.sourceDir || 'bottom'; // Fallback just in case
+
+          // 1. Lock the origin down to the original source block
+          setConnectingFromId(sourceId);
+
+          // 2. 🎯 Use the authentic direction instead of a hardcoded 'top'
+          setConnectingDirection(originalDirection);
+
+          // 3. Pin the live line target to the precise mouse position
+          const rect = canvasRef.current!.getBoundingClientRect();
+          setMouseCanvasPos({
+            x: (e.clientX - rect.left - cameraOffset.x) / zoomScale,
+            y: (e.clientY - rect.top - cameraOffset.y) / zoomScale,
+          });
+
+          // 4. Sever the old connection record from the store
+          removeBlockConnection(sourceId, targetId);
+          return;
+        }
+      }
+    }
+
+    if (e.button === 2) return; // Maintain normal right-click flows for command menus
+
     const blockElement = target.closest('[data-canvas-block-id]');
     const direction = target.getAttribute('data-anchor-dir');
 
+    // Standard Anchor Pin connecting logic
     if (direction && blockElement) {
       e.stopPropagation();
       const blockId = blockElement.getAttribute('data-canvas-block-id')!;
@@ -75,6 +122,7 @@ export const useSpatialMouse = ({
       return;
     }
 
+    // Standard card dragging setup
     if (blockElement) {
       const blockId = blockElement.getAttribute('data-canvas-block-id')!;
       const block = blocks.find((b) => b.id === blockId);
@@ -140,7 +188,12 @@ export const useSpatialMouse = ({
           'data-canvas-block-id',
         )!;
         if (targetBlockId !== connectingFromId) {
-          addBlockConnection(connectingFromId, targetBlockId);
+          // 🎯 Pass your active anchor direction state here (e.g., connectingDirection)
+          addBlockConnection(
+            connectingFromId,
+            targetBlockId,
+            connectingDirection as AnchorDirection,
+          );
         }
       }
     }
@@ -151,7 +204,6 @@ export const useSpatialMouse = ({
     setConnectingDirection(null);
   };
 
-  // 🛠️ Wheel/Trackpad Zoom Handler
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomIntensity = 0.05;
@@ -161,6 +213,10 @@ export const useSpatialMouse = ({
         prevScale + (e.deltaY < 0 ? zoomIntensity : -zoomIntensity);
       return Math.min(Math.max(nextScale, 0.2), 2);
     });
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
   };
 
   return {
@@ -180,6 +236,7 @@ export const useSpatialMouse = ({
       onMouseUp: handleMouseUp,
       onMouseLeave: handleMouseUp,
       onWheel: handleWheel,
+      onContextMenu: handleContextMenu,
     },
   };
 };

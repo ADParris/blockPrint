@@ -44,23 +44,26 @@ const BlockCommandMenu: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="flex flex-col min-w-[170px] bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl select-none">
       {commands.map((command) => (
-        <button
-          className={`text-left p-1.5 hover:bg-slate-700 rounded text-sm ${command.labelStyle}`}
+        <div
           key={command.type}
           onClick={() => handleCommandSelect(command.type)}
+          className={`w-full text-left px-3 py-2.5 hover:bg-slate-800/80 rounded-md transition-colors cursor-pointer text-sm ${command.labelStyle}`}
         >
           {command.label}
-        </button>
+        </div>
       ))}
-      <button
-        className="border-t border-t-slate-500 text-left p-1.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded text-sm font-medium transition-colors"
+
+      <div className="h-[1px] bg-slate-800/60 my-1 mx-1" />
+
+      <div
         onClick={handleDeleteSelect}
+        className="w-full text-left px-3 py-2.5 hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 rounded-md transition-colors cursor-pointer text-sm font-medium"
       >
         🗑️ Delete block
-      </button>
-    </>
+      </div>
+    </div>
   );
 };
 

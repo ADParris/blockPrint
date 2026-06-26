@@ -40,10 +40,8 @@ export const GlobalCanvas: React.FC = () => {
 
         const rect = dragHandle.getBoundingClientRect();
 
-        // Calculate coordinate offsets relative to our managed canvas layout wrapper
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        const top = rect.bottom - (containerRect?.top ?? 0) + 4;
-        const left = rect.left - (containerRect?.left ?? 0);
+        const top = rect.bottom + 4;
+        const left = rect.left;
 
         openMenu(CommandMenu.BlockCommand, { top, left });
         return;
@@ -105,28 +103,31 @@ export const GlobalCanvas: React.FC = () => {
   // Unified keyboard navigation
   const { handleKeyDown } = useCanvasKeyboard();
 
+  const isArrowMenu = activeMenuId?.startsWith('connection-');
+
+  const isValidMenu = activeMenuId
+    ? Object.values(CommandMenu).includes(activeMenuId as CommandMenuType) ||
+      isArrowMenu
+    : false;
+
   const currentMenu = (activeMenuId: string) => {
+    // 🎯 Add a catch-all route for connection strings right at the top!
+
     switch (activeMenuId) {
       case CommandMenu.ArrowCommand:
         return (
-          <ArrowCommandMenu connectionId={activeMenuId} onClose={closeMenu} />
+          <ArrowCommandMenu
+            connectionId={position?.arrowConnectionId ?? ''}
+            onClose={closeMenu}
+          />
         );
-
       case CommandMenu.BlockCommand:
         return <BlockCommandMenu />;
 
       default:
-        return (
-          <div className="p-4 text-xs text-slate-400">
-            Unknown Menu: ({activeMenuId})
-          </div>
-        );
+        return null;
     }
   };
-
-  const isValidMenu = activeMenuId
-    ? Object.values(CommandMenu).includes(activeMenuId as CommandMenuType)
-    : false;
 
   if (isLoading) {
     return (
@@ -141,10 +142,10 @@ export const GlobalCanvas: React.FC = () => {
   return (
     <main
       ref={containerRef}
-      className="relative w-full h-full outline-none"
+      className="w-full h-full min-h-full outline-none"
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      onClick={handleCanvasClick} // 👈 Captures all bubbling clicks centrally!
+      onClick={handleCanvasClick}
     >
       {layoutMode === LayoutMode.DocumentCanvas ? (
         <DocumentCanvas />

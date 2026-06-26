@@ -1,14 +1,29 @@
 // src/App.tsx
 import { GlobalCanvas } from './components/Canvases/GlobalCanvas';
 import Sidebar from './components/Sidebar';
+import { LayoutMode } from './state/types';
+import { useCanvasStore } from './state/useCanvasStore';
 
 function App() {
+  const notebook = useCanvasStore((state) => state.getActiveNotebook());
+  const layoutMode = notebook?.layoutMode ?? LayoutMode.DocumentCanvas;
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden dark:bg-black dark:text-slate-100">
-      <aside className="w-64 h-full flex flex-col border-r border-slate-900 bg-slate-800/50 overflow-y-auto p-4">
+    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
+      <aside className="w-64 h-full border-r border-slate-800/60 bg-zinc-900 shrink-0">
         <Sidebar />
       </aside>
-      <GlobalCanvas />
+
+      {/* 🎯 Dynamically toggle scrolling layout context based on the view mode */}
+      <div
+        className={`flex-1 h-full custom-scrollbar ${
+          layoutMode === LayoutMode.DocumentCanvas
+            ? 'overflow-y-auto'
+            : 'overflow-hidden'
+        }`}
+      >
+        <GlobalCanvas />
+      </div>
     </div>
   );
 }

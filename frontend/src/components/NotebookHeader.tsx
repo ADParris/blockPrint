@@ -1,33 +1,44 @@
-import { useEffect, useRef, useState } from 'react'; // 🎯 Track explicit action state
-import { saveImageBlob } from '../api/idbStorage';
+import { useEffect, useRef, useState } from 'react';
+import { useImageBlob } from '../hooks/useImageBlob';
 import type { Notebook } from '../state/types';
 import { useCanvasStore } from '../state/useCanvasStore';
-import ImageBlock from './ImageBlock';
+import { ImageControls } from './ImageControls';
+import Loader from './Loader';
 
 interface NotebookHeaderProps {
   notebook: Notebook;
 }
 
 function NotebookHeader({ notebook }: NotebookHeaderProps) {
-  const [coverVersion, setCoverVersion] = useState(0);
-  const { updateNotebookHeader } = useCanvasStore((state) => state);
+  const { updateNotebookHeader, setImageCacheUrl } = useCanvasStore(
+    (state) => state,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // 🎯 Hidden file input reference for swapping images cleanly
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isUserAddingTitle, setIsUserAddingTitle] = useState(false);
+  const [isDecoded, setIsDecoded] = useState(false);
 
-  // 🎯 Re-added to satisfy the callback contract for ImageBlock
-  const handleCoverChange = (_id: string, newContent: string) => {
-    updateNotebookHeader(notebook.id, { coverImage: newContent || undefined });
-  };
-
+  // 1. Core State derived from props
+  const coverImageId = notebook.coverImage || '';
   const hasCover =
     !!notebook.coverImage && notebook.coverImage !== 'PENDING_UPLOAD';
   const hasTitleIntent =
     notebook.headerTitle !== undefined &&
     notebook.headerTitle !== 'Untitled Notebook';
+
+  // 2. Consume our new, unified logic hook using the notebook's ID as the storage key
+  const { previewUrl, isAssetLoading, processFile } = useImageBlob(
+    notebook.id,
+    coverImageId,
+  );
+
+  // 🎯 Render-pass sync: Reset decode state when the preview URL changes
+  const [prevUrl, setPrevUrl] = useState(previewUrl);
+  if (previewUrl !== prevUrl) {
+    setPrevUrl(previewUrl);
+    setIsDecoded(false);
+  }
 
   useEffect(() => {
     if (hasTitleIntent && isUserAddingTitle && inputRef.current) {
@@ -36,27 +47,25 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
     }
   }, [hasTitleIntent, isUserAddingTitle]);
 
-  // Triggered when a file is selected for a swap or new upload via the hidden input
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      try {
-        await saveImageBlob(notebook.id, file);
+    if (file) {
+      // 1. Evict the old object URL from the global Zustand cache instantly
+      setImageCacheUrl(notebook.id, '');
 
-        // 1. Update the Zustand store
+      // 2. Write the new binary file over the old one in IndexedDB
+      const success = await processFile(file);
+      if (success) {
+        // 3. Force the state update. Even if the string matches,
+        // the hook will now see that imageCache[notebook.id] is empty and re-fetch!
         updateNotebookHeader(notebook.id, { coverImage: notebook.id });
-
-        // 2. 🔥 Call it here! This increments the state and forces the re-render.
-        setCoverVersion((prev) => prev + 1);
-      } catch (err) {
-        console.error('Failed to store local banner binary:', err);
       }
+      e.target.value = '';
     }
   };
 
   return (
     <div className="group header-group relative w-full mb-8 min-h-10">
-      {/* Hidden native input for triggering file browsing */}
       <input
         type="file"
         ref={fileInputRef}
@@ -65,7 +74,7 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
         className="hidden"
       />
 
-      {/* 1. Hover Action Context Bar (For adding items when empty) */}
+      {/* 1. Hover Action Context Bar */}
       {(!hasCover || !hasTitleIntent) && (
         <div className="absolute -top-6 left-0 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-out z-10 select-none bg-[#0b0f19]/80 backdrop-blur-sm px-2 py-1 rounded border border-slate-800/40 shadow-md">
           {!hasCover && (
@@ -93,34 +102,45 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
         </div>
       )}
 
-      {/* 2. Cover Image Layer with Parent-Level Hover Controls */}
+      {/* 2. Pure Banner Layout Layer (No more hijacked ImageBlock) */}
       {hasCover && (
-        <div className="relative group/cover w-full h-48 overflow-hidden rounded-xl border border-slate-800/30 shadow-inner">
-          <ImageBlock
-            key={`${notebook.id}-v${coverVersion}`} // 🎯 Guarantees a fresh mount on every single swap!
-            blockId={notebook.id}
-            content={notebook.coverImage || ''}
-            onContentChange={handleCoverChange}
-            variant="cover"
-          />
-
-          {/* Controls overlaid elegantly on top */}
-          <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover/cover:opacity-100 transition-opacity duration-150 ease-out z-10">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1 text-xs font-semibold text-slate-300 bg-slate-900/80 hover:bg-slate-800 backdrop-blur-sm rounded border border-slate-700/50 transition-all cursor-pointer shadow-sm"
-            >
-              🔄 Swap Cover
-            </button>
-            <button
-              onClick={() =>
-                updateNotebookHeader(notebook.id, { coverImage: undefined })
-              }
-              className="px-2.5 py-1 text-xs font-semibold text-red-300 bg-red-950/80 hover:bg-red-900/90 backdrop-blur-sm rounded border border-red-900/40 transition-all cursor-pointer shadow-sm"
-            >
-              🗑️ Remove
-            </button>
+        <div className="relative group/cover w-full h-48 overflow-hidden rounded-xl border border-slate-800/30 bg-zinc-900/40 shadow-inner">
+          {/* 📡 SKELETON LOADER LAYER */}
+          <div
+            className={`absolute inset-0 z-30 w-full h-full bg-slate-800/20 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
+              isAssetLoading || !isDecoded ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <Loader label="Loading cover..." size="md" />
           </div>
+
+          {/* 🖼️ ACTIVE BANNER ELEMENT */}
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt="Cover banner"
+              onLoad={() => setIsDecoded(true)}
+              onError={() => setIsDecoded(true)}
+              className={`w-full h-full object-cover transition-opacity duration-300 ease-out ${
+                isDecoded ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          )}
+
+          {/* Overlaid Banner Controls */}
+          <ImageControls
+            onRemove={() => {
+              setImageCacheUrl(notebook.id, '');
+              updateNotebookHeader(notebook.id, { coverImage: undefined });
+            }}
+            onSwap={async (file) => {
+              setImageCacheUrl(notebook.id, '');
+              const success = await processFile(file);
+              if (success) {
+                updateNotebookHeader(notebook.id, { coverImage: notebook.id });
+              }
+            }}
+          />
         </div>
       )}
 
@@ -138,13 +158,11 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
             if (e.key === 'Backspace') {
               const input = e.currentTarget;
               if (input.selectionStart !== input.selectionEnd) return;
-
-              const isAtStart =
-                input.selectionStart === 0 && input.selectionEnd === 0;
-              const isFieldEmpty =
-                !notebook.headerTitle || notebook.headerTitle.trim() === '';
-
-              if (isAtStart || isFieldEmpty) {
+              if (
+                (input.selectionStart === 0 && input.selectionEnd === 0) ||
+                !notebook.headerTitle ||
+                notebook.headerTitle.trim() === ''
+              ) {
                 e.preventDefault();
                 updateNotebookHeader(notebook.id, {
                   headerTitle: 'Untitled Notebook',

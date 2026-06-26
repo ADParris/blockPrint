@@ -23,7 +23,7 @@ const Modal: React.FC<ModalProps> = ({ menuPosition, children, onClose }) => {
       : {
           top: `${menuPosition.top}px`,
           left: `${menuPosition.left}px`,
-          position: 'absolute',
+          position: 'fixed',
         };
 
   // 1. Reusable "Self-Closing" Logic (Click outside & Escape)
@@ -55,10 +55,10 @@ const Modal: React.FC<ModalProps> = ({ menuPosition, children, onClose }) => {
   return (
     <div
       ref={modalRef}
-      className="w-fit h-fit max-w-[90vw] max-h-[90vh] overflow-auto p-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl"
+      className="w-fit h-fit max-w-[90vw] max-h-[90vh] overflow-auto bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50"
       style={positioningStyle}
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col">
         {children} {/* 👈 Pass in BlockCommandMenu or anything else */}
       </div>
     </div>
