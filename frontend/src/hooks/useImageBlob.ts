@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { loadImageBlob, saveImageBlob } from '../api/idbStorage';
-import { useCanvasStore } from '../state/useCanvasStore';
+import { useProjectStore } from '../state/useProjectStore';
 
 export function useImageBlob(storageKey: string, content: string) {
-  const imageCache = useCanvasStore((state) => state.imageCache);
-  const setImageCacheUrl = useCanvasStore((state) => state.setImageCacheUrl);
+  const imageCache = useProjectStore((state) => state.imageCache);
+  const setImageCacheUrl = useProjectStore((state) => state.setImageCacheUrl);
 
   // 1. Instantly determine expected URL during render pass
   const currentExpectedUrl = content ? (imageCache[storageKey] ?? null) : null;

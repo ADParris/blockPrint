@@ -1,4 +1,6 @@
-import { useCanvasStore } from '../state/useCanvasStore';
+// src/components/Menus/ArrowCommandMenu.tsx
+import React from 'react';
+import { useProjectStore } from '../state/useProjectStore';
 
 interface ArrowCommandMenuProps {
   connectionId: string;
@@ -9,14 +11,14 @@ const ArrowCommandMenu: React.FC<ArrowCommandMenuProps> = ({
   connectionId,
   onClose,
 }) => {
-  const removeBlockConnection = useCanvasStore(
-    (state) => state.removeBlockConnection,
+  // 🎯 CONNECT TO UNIFORM ACTION: Grab our clean internal-unpacking slice action
+  const removeBlockConnectionByKey = useProjectStore(
+    (state) => state.removeBlockConnectionByKey,
   );
 
   const handleDeleteConnection = () => {
-    const sourceId = connectionId.split('__')[1];
-    const targetId = connectionId.split('__')[2];
-    removeBlockConnection(sourceId, targetId);
+    // 🎯 ZERO PARSING HERE: Let the store handle the token string directly!
+    removeBlockConnectionByKey(connectionId);
     onClose();
   };
 

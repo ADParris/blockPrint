@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useImageBlob } from '../hooks/useImageBlob'; // Adjust this path to wherever you saved it!
-import { useCanvasStore } from '../state/useCanvasStore';
+import { useProjectStore } from '../state/useProjectStore';
 import { ImageControls } from './ImageControls';
 import Loader from './Loader';
 
@@ -15,7 +15,7 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
   content,
   onContentChange,
 }) => {
-  const setImageCacheUrl = useCanvasStore((state) => state.setImageCacheUrl);
+  const setImageCacheUrl = useProjectStore((state) => state.setImageCacheUrl);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -1,4 +1,27 @@
+// src/state/canvasSlice.ts
 import type { AnchorDirection, LayoutModeType, StoreSlice } from './types';
+
+// 🎯 CENTRALIZED KEY UTILITIES
+export const createConnectionKey = (
+  sourceId: string,
+  targetId: string,
+  sourceDir: AnchorDirection,
+  targetDir: AnchorDirection,
+): string => {
+  return `conn__${sourceId}__${targetId}__${sourceDir}__${targetDir}`;
+};
+
+const parseConnectionKey = (key: string) => {
+  const parts = key.split('__');
+  if (parts.length < 5) return null;
+  const [, sourceId, targetId, sourceDir, targetDir] = parts;
+  return {
+    sourceId,
+    targetId,
+    sourceDir: sourceDir as AnchorDirection,
+    targetDir: targetDir as AnchorDirection,
+  };
+};
 
 export interface CanvasSlice {
   setLayoutMode: (mode: LayoutModeType) => void;
@@ -14,32 +37,34 @@ export interface CanvasSlice {
     blockId: string,
     position: { x: number; y: number },
   ) => void;
-
-  // 🎯 Updated signatures to match our 2-argument implementation contract!
-  addBlockConnection: (
-    sourceId: string,
-    targetId: string,
-    sourceDir: AnchorDirection,
-  ) => void;
-  removeBlockConnection: (sourceId: string, targetId: string) => void;
+  addBlockConnectionByKey: (connectionKey: string) => void;
+  removeBlockConnectionByKey: (connectionKey: string) => void;
 }
 
 export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
-  // 1. Initial State Values
   cameraOffset: { x: 0, y: 0 },
   zoomScale: 1,
-  setLayoutMode: (mode) => {
-    const activeNotebookId = get().activeNotebookId;
-    if (!activeNotebookId) return;
 
-    set((state) => ({
-      notebooks: state.notebooks.map((nb) =>
-        nb.id === activeNotebookId ? { ...nb, layoutMode: mode } : nb,
-      ),
-    }));
+  setLayoutMode: (mode) => {
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
+      return {
+        ...page,
+        layoutMode: mode,
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
+    });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 
-  // 2. Camera Viewport Actions
   setCameraOffset: (offset) => {
     const nextOffset =
       typeof offset === 'function' ? offset(get().cameraOffset) : offset;
@@ -52,85 +77,119 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
     set({ zoomScale: nextScale });
   },
 
-  // 3. Coordinate Update Engine
   updateBlockPosition: (blockId, position) => {
-    const activeNotebookId = get().activeNotebookId;
-    if (!activeNotebookId) return;
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
 
-    set((state) => ({
-      notebooks: state.notebooks.map((nb) => {
-        if (nb.id !== activeNotebookId) return nb;
-        return {
-          ...nb,
-          blocks: nb.blocks.map((block) => {
-            if (block.id !== blockId) return block;
-            return {
-              ...block,
-              position: {
-                ...block.position,
-                ...position,
-              },
-            };
-          }),
-        };
-      }),
-    }));
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
+      return {
+        ...page,
+        blocks: page.blocks.map((block) => {
+          if (block.id !== blockId) return block;
+          return {
+            ...block,
+            position: {
+              ...block.position,
+              ...position,
+            },
+          };
+        }),
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
+    });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 
-  addBlockConnection: (sourceId, targetId, sourceDir) => {
-    set((state) => {
-      const updatedNotebooks = state.notebooks.map((notebook) => {
-        if (notebook.id !== state.activeNotebookId) return notebook;
+  addBlockConnectionByKey: (connectionKey) => {
+    const parsed = parseConnectionKey(connectionKey);
+    if (!parsed) return;
 
-        return {
-          ...notebook,
-          blocks: notebook.blocks.map((block) => {
-            if (block.id !== sourceId) return block;
+    // 🎯 FIX: Extracted targetDir cleanly out of the parsed key object
+    const { sourceId, targetId, sourceDir, targetDir } = parsed;
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
 
-            const currentConnections = block.connections ?? [];
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
 
-            // 🎯 FIX: Check if an object with this exact target and direction already exists
-            const exists = currentConnections.some(
-              (c) => c.targetId === targetId && c.sourceDir === sourceDir,
-            );
-            if (exists) return block;
+      return {
+        ...page,
+        blocks: page.blocks.map((block) => {
+          if (block.id !== sourceId) return block;
 
-            return {
-              ...block,
-              connections: [...currentConnections, { targetId, sourceDir }],
-            };
-          }),
-        };
-      });
+          const currentConnections = block.connections ?? [];
+          // 🎯 ENHANCEMENT: Duplication check now looks at both directions
+          const exists = currentConnections.some(
+            (c) =>
+              c.targetId === targetId &&
+              c.sourceDir === sourceDir &&
+              c.targetDir === targetDir,
+          );
+          if (exists) return block;
 
-      return { notebooks: updatedNotebooks };
+          return {
+            ...block,
+            connections: [
+              ...currentConnections,
+              { targetId, sourceDir, targetDir },
+            ],
+          };
+        }),
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
     });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 
-  removeBlockConnection: (sourceId, targetId) => {
-    set((state) => {
-      const updatedNotebooks = state.notebooks.map((notebook) => {
-        if (notebook.id !== state.activeNotebookId) return notebook;
+  removeBlockConnectionByKey: (connectionKey) => {
+    const parsed = parseConnectionKey(connectionKey);
+    if (!parsed) return;
 
-        return {
-          ...notebook,
-          blocks: notebook.blocks.map((block) => {
-            if (block.id !== sourceId) return block;
+    // 🎯 ENHANCEMENT: Destructure targetDir for explicit cleanup matching
+    const { sourceId, targetId, sourceDir, targetDir } = parsed;
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
 
-            const currentConnections = block.connections ?? [];
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
 
-            // 🎯 FIX: Filter out by checking the targetId property inside the object
-            return {
-              ...block,
-              connections: currentConnections.filter(
-                (c) => c.targetId !== targetId,
-              ),
-            };
-          }),
-        };
-      });
+      return {
+        ...page,
+        blocks: page.blocks.map((block) => {
+          if (block.id !== sourceId) return block;
 
-      return { notebooks: updatedNotebooks };
+          const currentConnections = block.connections ?? [];
+          return {
+            ...block,
+            connections: currentConnections.filter(
+              (c) =>
+                !(
+                  c.targetId === targetId &&
+                  c.sourceDir === sourceDir &&
+                  c.targetDir === targetDir
+                ),
+            ),
+          };
+        }),
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
     });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 });

@@ -1,23 +1,31 @@
+// src/components/Canvases/SpatialCanvas.tsx
 import React, { useRef } from 'react';
 import { useSpatialMouse } from '../../../hooks/useSpacialMouse';
-import { useCanvasStore } from '../../../state/useCanvasStore';
+import { useProjectStore } from '../../../state/useProjectStore';
 import Card from './Card';
 import ConnectionLayer from './ConnectionLayer';
 
 const SpatialCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  const getActiveNotebook = useCanvasStore((state) => state.getActiveNotebook);
-  const activeNotebook = getActiveNotebook();
+  // 🎯 Resolve the current active page context from our store slices
+  const { activeProjectId, activePageId, pages } = useProjectStore(
+    (state) => state,
+  );
 
-  // 🔌 Attach our newly decoupled state machine hook!
+  const activePage =
+    activeProjectId && activePageId && pages[activeProjectId]
+      ? pages[activeProjectId].find((p) => p.id === activePageId)
+      : null;
+
+  // 🔌 Attach our decoupled state machine hook safely!
   const { cameraOffset, zoomScale, bgFill, mouseState, mouseHandlers } =
     useSpatialMouse({
       canvasRef,
-      blocks: activeNotebook?.blocks ?? [],
+      blocks: activePage?.blocks ?? [],
     });
 
-  if (!activeNotebook) return null;
+  if (!activePage) return null;
 
   return (
     <div
@@ -58,7 +66,7 @@ const SpatialCanvas: React.FC = () => {
       >
         {/* Dynamic Vector Lines Layer */}
         <ConnectionLayer
-          blocks={activeNotebook.blocks}
+          blocks={activePage.blocks}
           connectingFromId={mouseState.connectingFromId}
           connectingDirection={mouseState.connectingDirection}
           mouseCanvasPos={mouseState.mouseCanvasPos}
@@ -66,7 +74,7 @@ const SpatialCanvas: React.FC = () => {
 
         {/* Card Component Wrapper Layer */}
         <div className="absolute inset-0 pointer-events-none z-10">
-          {activeNotebook.blocks.map((block, index) => (
+          {activePage.blocks.map((block, index) => (
             <Card
               key={block.id}
               block={block}

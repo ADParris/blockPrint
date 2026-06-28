@@ -1,6 +1,6 @@
 import type { BlockType } from '../state/types';
-import { useCanvasStore } from '../state/useCanvasStore';
 import { useModalStore } from '../state/useModalStore';
+import { useProjectStore } from '../state/useProjectStore';
 
 interface CommandItem {
   label: string;
@@ -9,7 +9,7 @@ interface CommandItem {
 }
 
 const BlockCommandMenu: React.FC = () => {
-  const { activeBlockId, deleteBlock, updateBlockType } = useCanvasStore(
+  const { activeBlockId, deleteBlock, updateBlockType } = useProjectStore(
     (state) => state,
   );
   const { closeMenu } = useModalStore((state) => state);

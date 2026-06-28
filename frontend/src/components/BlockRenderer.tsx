@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { codeToHtml } from 'shiki';
-import type { CanvasBlock, BlockType } from '../state/types';
-import { useCanvasStore } from '../state/useCanvasStore';
+import type { BlockType, CanvasBlock } from '../state/types';
+import { useProjectStore } from '../state/useProjectStore';
 import ImageBlock from './ImageBlock';
 
 interface BlockProps {
@@ -9,7 +9,7 @@ interface BlockProps {
 }
 
 const BlockRenderer: React.FC<BlockProps> = ({ block }) => {
-  const updateBlockContent = useCanvasStore(
+  const updateBlockContent = useProjectStore(
     (state) => state.updateBlockContent,
   );
   const [isEditing, setIsEditing] = useState(false);

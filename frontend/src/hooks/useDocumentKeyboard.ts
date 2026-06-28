@@ -1,27 +1,36 @@
+// src/hooks/useDocumentKeyboard.ts
 import type { KeyboardEvent } from 'react';
 import { LayoutMode } from '../state/types';
-import { useCanvasStore } from '../state/useCanvasStore';
 import { useModalStore } from '../state/useModalStore';
+import { useProjectStore } from '../state/useProjectStore';
 
 export const useDocumentKeyboard = () => {
-  // 1. Grab your centralized store actions and the notebook selector helper
-  const getActiveNotebook = useCanvasStore((state) => state.getActiveNotebook);
-  const updateBlockContent = useCanvasStore(
+  // 1. Grab modern active collections and parameters from the central store
+  const activeProjectId = useProjectStore((state) => state.activeProjectId);
+  const activePageId = useProjectStore((state) => state.activePageId);
+  const pages = useProjectStore((state) => state.pages);
+
+  // Core modification actions
+  const updateBlockContent = useProjectStore(
     (state) => state.updateBlockContent,
   );
-  const insertBlockAtIndex = useCanvasStore(
+  const insertBlockAtIndex = useProjectStore(
     (state) => state.insertBlockAtIndex,
   );
-  const deleteBlock = useCanvasStore((state) => state.deleteBlock);
-  const setActiveBlockId = useCanvasStore((state) => state.setActiveBlockId);
+  const deleteBlock = useProjectStore((state) => state.deleteBlock);
+  const setActiveBlockId = useProjectStore((state) => state.setActiveBlockId);
+
+  // Menu/Modal overlay contexts
   const activeMenuId = useModalStore((state) => state.activeMenuId);
   const closeMenu = useModalStore((state) => state.closeMenu);
 
   return (e: KeyboardEvent<HTMLElement>): boolean => {
-    // 2. Resolve the active notebook data instantly at runtime
-    const currentNotebook = getActiveNotebook();
-    const layoutMode = currentNotebook?.layoutMode;
-    const blocks = currentNotebook?.blocks || [];
+    // 2. Resolve the active page object safely at the runtime execution frame
+    const projectPages = pages[activeProjectId || ''] || [];
+    const currentPage = projectPages.find((page) => page.id === activePageId);
+
+    const layoutMode = currentPage?.layoutMode;
+    const blocks = currentPage?.blocks || [];
 
     // 3. Bail immediately if we aren't in linear Document Mode
     if (layoutMode !== LayoutMode.DocumentCanvas) return false;

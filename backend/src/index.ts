@@ -5,7 +5,7 @@ import { join } from 'path';
 const app = new Hono();
 
 // 📂 Move up out of backend/src/ and backend/ into the root blockPrint/ folder
-const ROOT_STORAGE_PATH = join(import.meta.dir, '../../notebooks_backup.json');
+const ROOT_STORAGE_PATH = join(import.meta.dir, '../../workspaces_backup.json');
 
 // 🛡️ Enable CORS so your Vite frontend (5173) can talk to this server seamlessly
 app.use(
@@ -17,16 +17,16 @@ app.use(
   }),
 );
 
-console.log(`🚀 Starting blockPrint Hono server...`);
+console.log(`🚀 Starting blockPrint PM Hono server...`);
 
-// 📖 GET Endpoint: Read and return the saved notebooks
+// 📖 GET Endpoint: Read and return the saved workspaces
 app.get('/api/load', async (c) => {
   try {
     const file = Bun.file(ROOT_STORAGE_PATH);
 
     // If the backup file doesn't exist yet, return an empty slate safely
     if (!(await file.exists())) {
-      return c.json({ notebooks: [] }, 200);
+      return c.json({ workspaces: [] }, 200);
     }
 
     // Bun.file makes reading text or JSON incredibly fast
@@ -42,7 +42,7 @@ app.get('/api/load', async (c) => {
   }
 });
 
-// 💾 POST Endpoint: Catch and save notebook JSON payload
+// 💾 POST Endpoint: Catch and save workspace JSON payload
 app.post('/api/save', async (c) => {
   try {
     // In Hono, 'c' is the Context object. c.req.json() parses the incoming body!
@@ -52,7 +52,7 @@ app.post('/api/save', async (c) => {
     await Bun.write(ROOT_STORAGE_PATH, JSON.stringify(body, null, 2));
 
     return c.json(
-      { success: true, message: 'Notebook saved to root successfully!' },
+      { success: true, message: 'Workspace saved to root successfully!' },
       200,
     );
   } catch (error) {

@@ -1,22 +1,27 @@
 import type { KeyboardEvent } from 'react';
 import { LayoutMode } from '../state/types';
-import { useCanvasStore } from '../state/useCanvasStore';
+import { useProjectStore } from '../state/useProjectStore';
 
 export const useSpatialKeyboard = () => {
-  const getActiveNotebook = useCanvasStore((state) => state.getActiveNotebook);
+  // 🎯 Pull our active IDs and pages dictionary directly from the modern multi-project store
+  const { activeProjectId, activePageId, pages } = useProjectStore(
+    (state) => state,
+  );
 
-  // 🎯 Select individual stable references to prevent object recreation loops
-  // const cameraOffset = useCanvasStore(
-  //   (state) => state.cameraOffset ?? { x: 0, y: 0 },
-  // );
-  const zoomScale = useCanvasStore((state) => state.zoomScale ?? 1);
-  const setCameraOffset = useCanvasStore((state) => state.setCameraOffset);
-  const setZoomScale = useCanvasStore((state) => state.setZoomScale);
+  const zoomScale = useProjectStore((state) => state.zoomScale ?? 1);
+  const setCameraOffset = useProjectStore((state) => state.setCameraOffset);
+  const setZoomScale = useProjectStore((state) => state.setZoomScale);
 
   return (e: KeyboardEvent<HTMLElement>): boolean => {
-    const currentNotebook = getActiveNotebook();
-    const layoutMode = currentNotebook?.layoutMode;
+    // 🔍 Safe structural lookup for the active page layout mode
+    const activePage =
+      activeProjectId && activePageId && pages[activeProjectId]
+        ? pages[activeProjectId].find((p) => p.id === activePageId)
+        : null;
 
+    const layoutMode = activePage?.layoutMode ?? LayoutMode.DocumentCanvas;
+
+    // 🎯 If we aren't explicitly on the infinite block canvas layout, ignore macro overrides entirely!
     if (layoutMode !== LayoutMode.SpatialCanvas) return false;
 
     // 🔍 1. Canvas Macro Modifiers (Ctrl/Cmd Bindings)

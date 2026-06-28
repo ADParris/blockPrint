@@ -1,18 +1,22 @@
+// src/components/SidebarLayoutToggle.tsx
 import React from 'react';
-import { useCanvasStore } from '../state/useCanvasStore';
 import { LayoutMode } from '../state/types';
+import { useProjectStore } from '../state/useProjectStore';
 
 export const SidebarLayoutToggle: React.FC = () => {
-  const activeNotebookId = useCanvasStore((state) => state.activeNotebookId);
-  const notebooks = useCanvasStore((state) => state.notebooks);
-  const setLayoutMode = useCanvasStore((state) => state.setLayoutMode);
+  const { activeProjectId, activePageId, pages, setLayoutMode } =
+    useProjectStore((state) => state);
 
-  const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
+  // Safely grab the currently active page object
+  const activePage =
+    activeProjectId && activePageId && pages[activeProjectId]
+      ? pages[activeProjectId].find((p) => p.id === activePageId)
+      : null;
 
-  // If there's no active notebook selection, keep the footer clean
-  if (!activeNotebook) return null;
+  // If there's no active page selection, keep the footer clean
+  if (!activePage) return null;
 
-  const currentMode = activeNotebook.layoutMode || LayoutMode.DocumentCanvas;
+  const currentMode = activePage.layoutMode || LayoutMode.DocumentCanvas;
 
   return (
     <div className="mt-auto p-4 border-t border-slate-800 bg-[#0b0f19]">

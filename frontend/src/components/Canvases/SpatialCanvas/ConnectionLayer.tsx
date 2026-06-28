@@ -1,4 +1,5 @@
 import React from 'react';
+import { createConnectionKey } from '../../../state/canvasSlice'; // 🎯 Linked to your centralized key utility
 import type { CanvasBlock } from '../../../state/types';
 import { CommandMenu } from '../../../state/types';
 import { useModalStore } from '../../../state/useModalStore';
@@ -17,31 +18,30 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
   mouseCanvasPos,
 }) => {
   const { openMenu } = useModalStore();
-  const isConnecting = connectingFromId !== null;
 
   // 🎯 DYNAMIC ORTHOGONAL ROUTER
-  // Calculates clean 90-degree stair-bends from any starting face to any target face
   const calculateOrthogonalPath = (
     startX: number,
     startY: number,
     endX: number,
     endY: number,
-    direction: string,
+    sourceDir: string,
+    targetDir: string,
   ) => {
-    const offset = 30; // The standard "bend out in space" buffer distance
+    const offset = 40; // Clearance runway away from the blocks
 
-    if (direction === 'bottom') {
-      const exitY = startY + offset;
+    if (sourceDir === 'bottom') {
+      if (targetDir === 'bottom') {
+        const lowestY = Math.max(startY, endY) + offset;
+        return [
+          `M ${startX} ${startY}`,
+          `L ${startX} ${lowestY}`,
+          `L ${endX} ${lowestY}`,
+          `L ${endX} ${endY}`,
+        ].join(' ');
+      }
 
-      // 🎯 FIX: Check if the source and target are row-level neighbors
-      // If they are on the same plane, force a deeper, fixed underpass drop (e.g., 40px past the exit)
-      const isSameRowUnderpass = Math.abs(endY - startY) < 30;
-      const midY = isSameRowUnderpass
-        ? exitY + 30
-        : endY > exitY
-          ? exitY + (endY - exitY) / 2
-          : exitY;
-
+      const midY = startY + (endY - startY) / 2;
       return [
         `M ${startX} ${startY}`,
         `L ${startX} ${midY}`,
@@ -50,9 +50,18 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
       ].join(' ');
     }
 
-    if (direction === 'top') {
-      const exitY = startY - offset;
-      const midY = endY < exitY ? exitY + (endY - exitY) / 2 : exitY;
+    if (sourceDir === 'top') {
+      if (targetDir === 'top') {
+        const highestY = Math.min(startY, endY) - offset;
+        return [
+          `M ${startX} ${startY}`,
+          `L ${startX} ${highestY}`,
+          `L ${endX} ${highestY}`,
+          `L ${endX} ${endY}`,
+        ].join(' ');
+      }
+
+      const midY = startY + (endY - startY) / 2;
       return [
         `M ${startX} ${startY}`,
         `L ${startX} ${midY}`,
@@ -61,9 +70,18 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
       ].join(' ');
     }
 
-    if (direction === 'right') {
-      const exitX = startX + offset;
-      const midX = endX > exitX ? exitX + (endX - exitX) / 2 : exitX;
+    if (sourceDir === 'right') {
+      if (targetDir === 'right') {
+        const furthestX = Math.max(startX, endX) + offset;
+        return [
+          `M ${startX} ${startY}`,
+          `L ${furthestX} ${startY}`,
+          `L ${furthestX} ${endY}`,
+          `L ${endX} ${endY}`,
+        ].join(' ');
+      }
+
+      const midX = startX + (endX - startX) / 2;
       return [
         `M ${startX} ${startY}`,
         `L ${midX} ${startY}`,
@@ -72,9 +90,18 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
       ].join(' ');
     }
 
-    if (direction === 'left') {
-      const exitX = startX - offset;
-      const midX = endX < exitX ? exitX + (endX - exitX) / 2 : exitX;
+    if (sourceDir === 'left') {
+      if (targetDir === 'left') {
+        const furthestX = Math.min(startX, endX) - offset;
+        return [
+          `M ${startX} ${startY}`,
+          `L ${furthestX} ${startY}`,
+          `L ${furthestX} ${endY}`,
+          `L ${endX} ${endY}`,
+        ].join(' ');
+      }
+
+      const midX = startX + (endX - startX) / 2;
       return [
         `M ${startX} ${startY}`,
         `L ${midX} ${startY}`,
@@ -114,99 +141,98 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
           const tX = targetBlock.position?.x ?? 100 + tIndex * 20;
           const tY = targetBlock.position?.y ?? 100 + tIndex * 20;
 
-          // 1️⃣ Determine the exact departure port using our saved sourceDir (Flush to the edge)
-          let startX = sX + 128;
-          let startY = sY + 72; // Flush to bottom edge
+          // 🎯 FIX: Pass all four exact structural pieces to create the accurate system tracking key
+          const connectionKey = createConnectionKey(
+            sourceBlock.id,
+            conn.targetId,
+            conn.sourceDir,
+            conn.targetDir,
+          );
+
+          // =========================================================================
+          // SECTION 1: SOURCE DEPARTURE PORT COORDINATES
+          // Maps coordinates directly from explicit metadata.
+          // =========================================================================
+          let startX = sX + 128; // Center horizontally
+          let startY = sY; // Baseline default: Top edge
 
           if (conn.sourceDir === 'top') {
-            startX = sX + 128;
-            startY = sY - 2;
-          } // 🎯 Flush to top
-          else if (conn.sourceDir === 'right') {
-            startX = sX + 256;
-            startY = sY + 40;
-          } // 🎯 Flush to right edge
-          else if (conn.sourceDir === 'left') {
-            startX = sX;
-            startY = sY + 40;
-          } // 🎯 Flush to left edge
-
-          // 2️⃣ Map out clean target entry points relative to the departure side (Padded for handles)
-          let targetX = tX + 128;
-          let targetY = tY - 14; // Default entry: slightly above top edge for handle breathing room
-
-          if (conn.sourceDir === 'top') {
-            targetX = tX + 128;
-            targetY = tY + 94;
+            startY = sY; // Flush with top edge
+          } else if (conn.sourceDir === 'bottom') {
+            startY = sY + 80 - 8; // Flush with bottom edge
           } else if (conn.sourceDir === 'right') {
-            // If targeting a block further left than us, enter its right side. Otherwise, enter left.
-            targetX = tX < sX ? tX + 268 : tX - 12;
-            targetY = tY + 40;
+            startX = sX + 256; // Flush with right edge
+            startY = sY + 40;
           } else if (conn.sourceDir === 'left') {
-            // 🎯 FIX: If targeting a block further left than us (like C to B), enter its RIGHT edge!
-            targetX = tX < sX ? tX + 268 : tX - 12;
-            targetY = tY + 40;
-          } else if (conn.sourceDir === 'bottom' && Math.abs(tY - sY) < 40) {
-            targetX = tX + 128;
-            targetY = tY + 84;
+            startX = sX; // Flush with left edge
+            startY = sY + 40;
           }
 
-          // 3️⃣ Fire your standard path calculation string using the concrete direction
+          // =========================================================================
+          // SECTION 2: TARGET ARRIVAL LANDING COORDINATES
+          // Seats arrow right on the perimeter borders of the target block
+          // =========================================================================
+          let targetX = tX + 128;
+          let targetY = tY + 40;
+
+          if (conn.targetDir === 'top') {
+            targetX = tX + 128;
+            targetY = tY - 8; // 🎯 Back off 8px above the top border
+          } else if (conn.targetDir === 'bottom') {
+            targetX = tX + 128;
+            targetY = tY + 80 + 2; // 🎯 Back off 8px below the bottom border (88px total)
+          } else if (conn.targetDir === 'left') {
+            targetX = tX - 8; // 🎯 Back off 8px to the left of the card face
+            targetY = tY + 40;
+          } else if (conn.targetDir === 'right') {
+            targetX = tX + 256 + 8; // 🎯 Back off 8px to the right of the card face (264px total)
+            targetY = tY + 40;
+          }
+
+          // =========================================================================
+          // SECTION 3: PATH ROUTER CALCULATION
+          // =========================================================================
           const pathData = calculateOrthogonalPath(
             startX,
             startY,
             targetX,
             targetY,
             conn.sourceDir,
+            conn.targetDir,
           );
-
-          const connectionKey = `connection__${sourceBlock.id}__${conn.targetId}`;
 
           return (
             <g
-              key={`${sourceBlock.id}-${conn.targetId}-${conn.sourceDir}`}
+              key={connectionKey}
               className="group/line cursor-pointer pointer-events-auto"
-              data-connection-id={connectionKey}
             >
-              {/* 1️⃣ LINE HITBOX: Keep it wide (48px) for easy right-clicking, but completely invisible */}
+              {/* Invisible Line Hover Hitbox */}
               <path
                 d={pathData}
                 fill="none"
                 stroke="transparent"
-                strokeWidth="48"
-                className={`cursor-pointer ${isConnecting ? 'pointer-events-none' : 'pointer-events-auto'}`}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  openMenu(CommandMenu.ArrowCommand, {
-                    top: e.clientY,
-                    left: e.clientX,
-                    arrowConnectionId: connectionKey,
-                  });
-                }}
+                strokeWidth="32"
+                className="pointer-events-stroke cursor-pointer"
               />
 
-              {/* 2️⃣ VISIBLE CONNECTION LINE */}
+              {/* Visible Vector Line */}
               <path
                 d={pathData}
                 fill="none"
                 stroke="#3b82f6"
                 strokeWidth="2"
                 markerEnd="url(#arrowhead)"
-                className="opacity-70 group-hover/line:opacity-100 group-hover/line:stroke-blue-400 transition-colors duration-150"
+                className="opacity-70 group-hover/line:opacity-100 group-hover/line:stroke-blue-400 transition-colors duration-150 pointer-events-none"
               />
 
-              {/* 3️⃣ NEW🎯 ARROWHEAD-ONLY HOVER GUIDE */}
-              {/* This places a 32px invisible touch target directly over the arrowhead that reveals a clean dashed ring on hover */}
-              <circle
-                cx={targetX}
-                cy={targetY}
-                r="16"
-                fill="transparent"
-                stroke="transparent"
-                strokeWidth="1.5"
-                style={{ strokeDasharray: '3 3' }}
-                className="cursor-pointer transition-colors duration-150 group-hover/line:stroke-blue-500/40 group-hover/line:fill-blue-500/5"
+              {/* Arrowhead / Click Interceptor */}
+              <g
+                className="pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  console.log(`Connection selected: ${connectionKey}`);
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -216,13 +242,32 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
                     arrowConnectionId: connectionKey,
                   });
                 }}
-              />
+              >
+                <circle
+                  cx={targetX}
+                  cy={targetY}
+                  r="16"
+                  fill="transparent"
+                  className="cursor-pointer"
+                />
+
+                <circle
+                  cx={targetX}
+                  cy={targetY}
+                  r="16"
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth="1.5"
+                  style={{ strokeDasharray: '3 3' }}
+                  className="group-hover/line:stroke-blue-500/50 group-hover/line:fill-blue-500/5 transition-all duration-150 pointer-events-none"
+                />
+              </g>
             </g>
           );
         });
       })}
 
-      {/* B. Live Drag-to-Connect Adaptive Selection Lasso */}
+      {/* Live Drag-to-Connect Adaptive Selection Lasso */}
       {connectingFromId &&
         connectingDirection &&
         (() => {
@@ -234,11 +279,11 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
           const sY = sourceBlock.position?.y ?? 100 + sIndex * 20;
 
           let startX = sX + 128;
-          let startY = sY + 82;
+          let startY = sY + 80;
 
           if (connectingDirection === 'top') {
             startX = sX + 128;
-            startY = sY - 2;
+            startY = sY;
           } else if (connectingDirection === 'right') {
             startX = sX + 256;
             startY = sY + 40;
@@ -247,13 +292,63 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
             startY = sY + 40;
           }
 
-          const livePath = calculateOrthogonalPath(
-            startX,
-            startY,
-            mouseCanvasPos.x,
-            mouseCanvasPos.y,
-            connectingDirection,
-          );
+          // 🎯 FIX: Determine a dynamic target face based on mouse position relative to start
+          let liveTargetDir = 'top';
+          if (connectingDirection === 'bottom') {
+            // If we are dragging down, expect to land on a bottom or top face smoothly
+            liveTargetDir = mouseCanvasPos.y > startY ? 'top' : 'bottom';
+          } else if (connectingDirection === 'right') {
+            liveTargetDir = mouseCanvasPos.x > startX ? 'left' : 'right';
+          } else if (connectingDirection === 'left') {
+            liveTargetDir = mouseCanvasPos.x < startX ? 'right' : 'left';
+          }
+
+          const runwayClearance = 40; // Force the line out by 40px before branching
+          let livePath: string;
+
+          if (connectingDirection === 'bottom') {
+            const dropY = startY + runwayClearance;
+            livePath = [
+              `M ${startX} ${startY}`,
+              `L ${startX} ${dropY}`, // 1. Force straight down out of the block floor
+              `L ${mouseCanvasPos.x} ${dropY}`, // 2. Slide horizontally to match mouse X
+              `L ${mouseCanvasPos.x} ${mouseCanvasPos.y}`, // 3. Head straight to mouse pointer
+            ].join(' ');
+          } else if (connectingDirection === 'top') {
+            const liftY = startY - runwayClearance;
+            livePath = [
+              `M ${startX} ${startY}`,
+              `L ${startX} ${liftY}`, // 1. Force straight up out of the roof
+              `L ${mouseCanvasPos.x} ${liftY}`, // 2. Slide horizontally
+              `L ${mouseCanvasPos.x} ${mouseCanvasPos.y}`,
+            ].join(' ');
+          } else if (connectingDirection === 'right') {
+            const pushX = startX + runwayClearance;
+            livePath = [
+              `M ${startX} ${startY}`,
+              `L ${pushX} ${startY}`, // 1. Force straight out right wall
+              `L ${pushX} ${mouseCanvasPos.y}`, // 2. Drop or climb vertically
+              `L ${mouseCanvasPos.x} ${mouseCanvasPos.y}`,
+            ].join(' ');
+          } else if (connectingDirection === 'left') {
+            const pushX = startX - runwayClearance;
+            livePath = [
+              `M ${startX} ${startY}`,
+              `L ${pushX} ${startY}`, // 1. Force straight out left wall
+              `L ${pushX} ${mouseCanvasPos.y}`, // 2. Drop or climb vertically
+              `L ${mouseCanvasPos.x} ${mouseCanvasPos.y}`,
+            ].join(' ');
+          } else {
+            // Fallback to router if direction is missing
+            livePath = calculateOrthogonalPath(
+              startX,
+              startY,
+              mouseCanvasPos.x,
+              mouseCanvasPos.y,
+              connectingDirection,
+              liveTargetDir,
+            );
+          }
 
           return (
             <path

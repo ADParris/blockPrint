@@ -1,15 +1,12 @@
+// src/state/imageSlice.ts
 import type { StoreSlice } from './types';
 
 export interface ImageSlice {
-  imageCache: Record<string, string>;
   setImageCacheUrl: (blockId: string, url: string) => void;
   clearImageCache: () => void;
 }
 
-// 🎯 Using our clean, uniform team-defined slice type wrapper!
 export const createImageSlice: StoreSlice<ImageSlice> = (set) => ({
-  imageCache: {},
-
   setImageCacheUrl: (blockId, url) =>
     set((state) => {
       const newCache = { ...state.imageCache };

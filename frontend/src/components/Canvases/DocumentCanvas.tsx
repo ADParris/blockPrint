@@ -1,32 +1,33 @@
-import { useCanvasStore } from '../../state/useCanvasStore';
+// src/components/Canvases/DocumentCanvas.tsx
+import { useProjectStore } from '../../state/useProjectStore';
 import BlockRenderer from '../BlockRenderer';
-import NotebookHeader from '../NotebookHeader';
+import PageHeader from '../PageHeader';
 import SortableList from '../SortableList';
 
 const DocumentCanvas: React.FC = () => {
   const {
-    getActiveNotebook,
+    activeProjectId,
+    activePageId,
+    pages,
     moveBlockToIndex,
     setActiveBlockId,
     updateBlockContent,
-  } = useCanvasStore((state) => state);
+  } = useProjectStore((state) => state);
 
-  // 1. Get the notebook reference (might be undefined initially)
-  const notebook = getActiveNotebook();
+  // 1. Resolve the active page reference out of the nested storage
+  const activePage =
+    activeProjectId && activePageId && pages[activeProjectId]
+      ? pages[activeProjectId].find((p) => p.id === activePageId)
+      : null;
 
-  // 2. Fetch Modal store configurations
-
-  // 3. Initialize your keyboard controller
-  // 🛡️ Safe Option: If notebook is missing, we pass an empty array '[]' so it doesn't crash!
-
-  // 4. 🛡️ The Guard Gate! All hooks have run, so now it is 100% legal to return early.
-  if (!notebook) {
+  // 2. 🛡️ The Guard Gate! Safe structural fallback if no page is active.
+  if (!activePage) {
     return (
       <div className="flex h-full items-center justify-center text-slate-400">
         <div className="text-center">
-          <p className="font-medium">No notebook selected</p>
+          <p className="font-medium">No page selected</p>
           <p className="text-sm text-slate-500 mt-1">
-            Select a notebook from the sidebar to begin editing.
+            Select or create a page from the sidebar to begin editing.
           </p>
         </div>
       </div>
@@ -52,16 +53,16 @@ const DocumentCanvas: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto pt-12 pb-24">
-      {' '}
-      {/* 👈 Added top padding here */}
       <div
         className="max-w-3xl mx-auto flex flex-col gap-2 pointer-events-auto"
         onBlur={handleContentChange}
         onFocus={handleFocus}
       >
-        <NotebookHeader notebook={notebook} />
+        {/* 🎯 Re-routing data context downward to the layout sub-headers */}
+        <PageHeader page={activePage} />
+
         <SortableList
-          items={notebook.blocks}
+          items={activePage.blocks}
           onMoveItem={moveBlockToIndex}
           renderItem={(block) => <BlockRenderer block={block} />}
         />

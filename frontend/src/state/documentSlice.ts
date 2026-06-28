@@ -1,3 +1,4 @@
+// src/state/documentSlice.ts
 import type { BlockType, CanvasBlock, StoreSlice } from './types';
 
 export interface DocumentActions {
@@ -5,7 +6,7 @@ export interface DocumentActions {
   updateBlockContent: (id: string, newContent: string) => void;
   updateBlockType: (id: string, newType: BlockType) => void;
   deleteBlock: (id: string) => void;
-  setActiveBlockId: (id: string) => void;
+  setActiveBlockId: (id: string | null) => void;
   moveBlockToIndex: (activeId: string, targetIndex: number) => void;
 }
 
@@ -17,77 +18,125 @@ export const createDocumentSlice: StoreSlice<DocumentActions> = (set, get) => ({
       type: 'p',
       content: initialContent,
     };
-    const { activeNotebookId, notebooks } = get();
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return '';
 
-    set({
-      notebooks: notebooks.map((nb) => {
-        if (nb.id !== activeNotebookId) return nb;
-        const updatedBlocks = [...nb.blocks];
-        const actualIndex = targetIndex ?? updatedBlocks.length;
-        updatedBlocks.splice(actualIndex, 0, newBlock);
-        return { ...nb, blocks: updatedBlocks };
-      }),
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
+
+      const updatedBlocks = [...page.blocks];
+      const actualIndex = targetIndex ?? updatedBlocks.length;
+      updatedBlocks.splice(actualIndex, 0, newBlock);
+
+      return {
+        ...page,
+        blocks: updatedBlocks,
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
     });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
     return newId;
   },
 
   updateBlockContent: (id, newContent) => {
-    const { activeNotebookId, notebooks } = get();
-    set({
-      notebooks: notebooks.map((nb) => {
-        if (nb.id !== activeNotebookId) return nb;
-        return {
-          ...nb,
-          blocks: nb.blocks.map((b) =>
-            b.id === id ? { ...b, content: newContent } : b,
-          ),
-        };
-      }),
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
+      return {
+        ...page,
+        blocks: page.blocks.map((b) =>
+          b.id === id ? { ...b, content: newContent } : b,
+        ),
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
     });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 
   updateBlockType: (id, newType) => {
-    const { activeNotebookId, notebooks } = get();
-    set({
-      notebooks: notebooks.map((nb) => {
-        if (nb.id !== activeNotebookId) return nb;
-        return {
-          ...nb,
-          blocks: nb.blocks.map((b) =>
-            b.id === id ? { ...b, type: newType } : b,
-          ),
-        };
-      }),
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
+      return {
+        ...page,
+        blocks: page.blocks.map((b) =>
+          b.id === id ? { ...b, type: newType } : b,
+        ),
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
     });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 
   deleteBlock: (id) => {
-    const { activeNotebookId, notebooks } = get();
+    const { activeProjectId, activePageId, pages, activeBlockId } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
+      return {
+        ...page,
+        blocks: page.blocks.filter((b) => b.id !== id),
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
+    });
+
     set({
-      notebooks: notebooks.map((nb) => {
-        if (nb.id !== activeNotebookId) return nb;
-        return { ...nb, blocks: nb.blocks.filter((b) => b.id !== id) };
-      }),
+      pages: { ...pages, [activeProjectId]: updatedPages },
+      activeBlockId: activeBlockId === id ? null : activeBlockId,
     });
   },
 
   moveBlockToIndex: (activeId, targetIndex) => {
-    const { activeNotebookId, notebooks } = get();
-    set({
-      notebooks: notebooks.map((nb) => {
-        if (nb.id !== activeNotebookId) return nb;
-        const oldIndex = nb.blocks.findIndex((b) => b.id === activeId);
-        if (oldIndex === -1) return nb;
+    const { activeProjectId, activePageId, pages } = get();
+    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
 
-        const updatedBlocks = [...nb.blocks];
-        const [movedBlock] = updatedBlocks.splice(oldIndex, 1);
-        const finalIndex =
-          oldIndex < targetIndex ? targetIndex - 1 : targetIndex;
-        updatedBlocks.splice(finalIndex, 0, movedBlock);
+    const updatedPages = pages[activeProjectId].map((page) => {
+      if (page.id !== activePageId) return page;
 
-        return { ...nb, blocks: updatedBlocks };
-      }),
+      const oldIndex = page.blocks.findIndex((b) => b.id === activeId);
+      if (oldIndex === -1) return page;
+
+      const updatedBlocks = [...page.blocks];
+      const [movedBlock] = updatedBlocks.splice(oldIndex, 1);
+      const finalIndex = oldIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      updatedBlocks.splice(finalIndex, 0, movedBlock);
+
+      return {
+        ...page,
+        blocks: updatedBlocks,
+        lastEditedBy: {
+          userId: get().currentUser?.id || 'unknown',
+          userName: get().currentUser?.name || 'Unknown',
+          timestamp: Date.now(),
+        },
+      };
     });
+
+    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
   },
 
   setActiveBlockId: (id) => set({ activeBlockId: id }),

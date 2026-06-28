@@ -1,16 +1,18 @@
+// src/components/Headers/PageHeader.tsx
 import { useEffect, useRef, useState } from 'react';
 import { useImageBlob } from '../hooks/useImageBlob';
-import type { Notebook } from '../state/types';
-import { useCanvasStore } from '../state/useCanvasStore';
+import type { Page } from '../state/types'; // 🎯 Updated from Notebook to Page
+import { useProjectStore } from '../state/useProjectStore';
 import { ImageControls } from './ImageControls';
 import Loader from './Loader';
 
-interface NotebookHeaderProps {
-  notebook: Notebook;
+interface PageHeaderProps {
+  page: Page; // 🎯 Renamed property
 }
 
-function NotebookHeader({ notebook }: NotebookHeaderProps) {
-  const { updateNotebookHeader, setImageCacheUrl } = useCanvasStore(
+function PageHeader({ page }: PageHeaderProps) {
+  // 🎯 Updated selector to pull the clean, multi-project action name
+  const { updatePageHeader, setImageCacheUrl } = useProjectStore(
     (state) => state,
   );
   const inputRef = useRef<HTMLInputElement>(null);
@@ -19,17 +21,16 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
   const [isUserAddingTitle, setIsUserAddingTitle] = useState(false);
   const [isDecoded, setIsDecoded] = useState(false);
 
-  // 1. Core State derived from props
-  const coverImageId = notebook.coverImage || '';
-  const hasCover =
-    !!notebook.coverImage && notebook.coverImage !== 'PENDING_UPLOAD';
+  // 1. Core State derived from page props
+  const pageId = page?.id || '';
+  const coverImageId = page?.coverImage || '';
+  const hasCover = !!page?.coverImage && page?.coverImage !== 'PENDING_UPLOAD';
   const hasTitleIntent =
-    notebook.headerTitle !== undefined &&
-    notebook.headerTitle !== 'Untitled Notebook';
+    page?.headerTitle !== undefined && page?.headerTitle !== 'Untitled Page';
 
-  // 2. Consume our new, unified logic hook using the notebook's ID as the storage key
+  // 2. Pass the fallback safe strings down into your hook
   const { previewUrl, isAssetLoading, processFile } = useImageBlob(
-    notebook.id,
+    pageId,
     coverImageId,
   );
 
@@ -50,15 +51,14 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 1. Evict the old object URL from the global Zustand cache instantly
-      setImageCacheUrl(notebook.id, '');
+      // 1. Evict old object URL from global cache instantly
+      setImageCacheUrl(page.id, '');
 
-      // 2. Write the new binary file over the old one in IndexedDB
+      // 2. Write new binary file over old one in IndexedDB
       const success = await processFile(file);
       if (success) {
-        // 3. Force the state update. Even if the string matches,
-        // the hook will now see that imageCache[notebook.id] is empty and re-fetch!
-        updateNotebookHeader(notebook.id, { coverImage: notebook.id });
+        // 3. Force the state update
+        updatePageHeader(page.id, { coverImage: page.id });
       }
       e.target.value = '';
     }
@@ -92,7 +92,7 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
             <button
               onClick={() => {
                 setIsUserAddingTitle(true);
-                updateNotebookHeader(notebook.id, { headerTitle: '' });
+                updatePageHeader(page.id, { headerTitle: '' });
               }}
               className="text-xs text-slate-400 hover:text-indigo-400 font-medium transition-colors cursor-pointer"
             >
@@ -102,10 +102,10 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
         </div>
       )}
 
-      {/* 2. Pure Banner Layout Layer (No more hijacked ImageBlock) */}
+      {/* 2. Pure Banner Layout Layer */}
       {hasCover && (
         <div className="relative group/cover w-full h-48 overflow-hidden rounded-xl border border-slate-800/30 bg-zinc-900/40 shadow-inner">
-          {/* 📡 SKELETON LOADER LAYER */}
+          {/* SKELETON LOADER LAYER */}
           <div
             className={`absolute inset-0 z-30 w-full h-full bg-slate-800/20 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
               isAssetLoading || !isDecoded ? 'opacity-100' : 'opacity-0'
@@ -130,14 +130,14 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
           {/* Overlaid Banner Controls */}
           <ImageControls
             onRemove={() => {
-              setImageCacheUrl(notebook.id, '');
-              updateNotebookHeader(notebook.id, { coverImage: undefined });
+              setImageCacheUrl(page.id, '');
+              updatePageHeader(page.id, { coverImage: undefined });
             }}
             onSwap={async (file) => {
-              setImageCacheUrl(notebook.id, '');
+              setImageCacheUrl(page.id, '');
               const success = await processFile(file);
               if (success) {
-                updateNotebookHeader(notebook.id, { coverImage: notebook.id });
+                updatePageHeader(page.id, { coverImage: page.id });
               }
             }}
           />
@@ -150,9 +150,9 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
           ref={inputRef}
           type="text"
           data-block-id="header-title"
-          value={notebook.headerTitle}
+          value={page.headerTitle}
           onChange={(e) =>
-            updateNotebookHeader(notebook.id, { headerTitle: e.target.value })
+            updatePageHeader(page.id, { headerTitle: e.target.value })
           }
           onKeyDown={(e) => {
             if (e.key === 'Backspace') {
@@ -160,20 +160,20 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
               if (input.selectionStart !== input.selectionEnd) return;
               if (
                 (input.selectionStart === 0 && input.selectionEnd === 0) ||
-                !notebook.headerTitle ||
-                notebook.headerTitle.trim() === ''
+                !page.headerTitle ||
+                page.headerTitle.trim() === ''
               ) {
                 e.preventDefault();
-                updateNotebookHeader(notebook.id, {
-                  headerTitle: 'Untitled Notebook',
+                updatePageHeader(page.id, {
+                  headerTitle: 'Untitled Page',
                 });
               }
             }
           }}
           onBlur={() => {
-            if (!notebook.headerTitle || notebook.headerTitle.trim() === '') {
-              updateNotebookHeader(notebook.id, {
-                headerTitle: 'Untitled Notebook',
+            if (!page.headerTitle || page.headerTitle.trim() === '') {
+              updatePageHeader(page.id, {
+                headerTitle: 'Untitled Page',
               });
             }
           }}
@@ -185,4 +185,4 @@ function NotebookHeader({ notebook }: NotebookHeaderProps) {
   );
 }
 
-export default NotebookHeader;
+export default PageHeader;

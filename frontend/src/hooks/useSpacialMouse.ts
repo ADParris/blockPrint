@@ -1,7 +1,7 @@
 // components/SpatialCanvas/useSpatialMouse.ts
 import { useMemo, useState } from 'react';
 import type { AnchorDirection, CanvasBlock } from '../state/types';
-import { useCanvasStore } from '../state/useCanvasStore';
+import { createConnectionKey, useProjectStore } from '../state/useProjectStore';
 
 interface UseSpatialMouseProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -27,21 +27,22 @@ export const useSpatialMouse = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // Atomic Canvas Store Selectors
-  const cameraOffset = useCanvasStore(
+  const cameraOffset = useProjectStore(
     (state) => state.cameraOffset ?? { x: 0, y: 0 },
   );
-  const zoomScale = useCanvasStore((state) => state.zoomScale ?? 1);
-  const setCameraOffset = useCanvasStore((state) => state.setCameraOffset);
-  const setZoomScale = useCanvasStore((state) => state.setZoomScale);
-  const updateBlockPosition = useCanvasStore(
+  const zoomScale = useProjectStore((state) => state.zoomScale ?? 1);
+  const setCameraOffset = useProjectStore((state) => state.setCameraOffset);
+  const setZoomScale = useProjectStore((state) => state.setZoomScale);
+  const updateBlockPosition = useProjectStore(
     (state) => state.updateBlockPosition,
   );
-  const addBlockConnection = useCanvasStore(
-    (state) => state.addBlockConnection,
+
+  const addBlockConnectionByKey = useProjectStore(
+    (state) => state.addBlockConnectionByKey,
   );
   // 🎯 Need this to delete the old route when a user picks up an existing arrow tip!
-  const removeBlockConnection = useCanvasStore(
-    (state) => state.removeBlockConnection,
+  const removeBlockConnectionByKey = useProjectStore(
+    (state) => state.removeBlockConnectionByKey,
   );
 
   const bgFill = useMemo(
@@ -88,7 +89,7 @@ export const useSpatialMouse = ({
           });
 
           // 4. Sever the old connection record from the store
-          removeBlockConnection(sourceId, targetId);
+          removeBlockConnectionByKey(connectionId);
           return;
         }
       }
@@ -183,17 +184,26 @@ export const useSpatialMouse = ({
       const target = e.target as HTMLElement;
       const blockElement = target.closest('[data-canvas-block-id]');
 
+      // 🎯 Determine exactly which handle face the mouse dropped onto
+      const releasedAnchorDir = target.getAttribute('data-anchor-dir') || 'top'; // Safe fallback landing side
+
       if (blockElement) {
         const targetBlockId = blockElement.getAttribute(
           'data-canvas-block-id',
         )!;
+
         if (targetBlockId !== connectingFromId) {
-          // 🎯 Pass your active anchor direction state here (e.g., connectingDirection)
-          addBlockConnection(
+          // 🎯 FIX: Cast connectingDirection safely with a fallback to resolve the null error
+          const sourceDir = (connectingDirection || 'top') as AnchorDirection;
+          const targetDir = (releasedAnchorDir || 'top') as AnchorDirection;
+
+          const connectionKey = createConnectionKey(
             connectingFromId,
             targetBlockId,
-            connectingDirection as AnchorDirection,
+            sourceDir, // 100% type-safe string now
+            targetDir, // 100% type-safe string now
           );
+          addBlockConnectionByKey(connectionKey);
         }
       }
     }
