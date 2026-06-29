@@ -11,12 +11,7 @@ import type {
   WorkspaceViewModeType,
 } from './types';
 
-import {
-  BaseAction,
-  BaseElement,
-  LayoutMode,
-  WorkspaceViewMode,
-} from './types';
+import { BaseAction, BaseElement, WorkspaceViewMode } from './types';
 
 export interface ProjectActions {
   setActiveProjectId: (id: string | null) => void;
@@ -134,7 +129,6 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       projectId,
       title,
       status: 'Pending',
-      layoutMode: LayoutMode.DocumentCanvas,
       lastEditedBy: {
         userId: user?.id || 'unknown',
         userName: user?.name || 'Unknown',
@@ -283,7 +277,6 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     const { currentUser, userSortOrders, projects, pages } = get();
     const userId = currentUser?.id || 'default_user';
 
-    // 1. Safely clone or initialize this specific user's root order configuration
     const userRoot = userSortOrders[userId] || {
       globalProjectsOrder: projects.map((p) => p.id),
       projectPagesOrder: {},
@@ -292,41 +285,95 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     if (type === 'project') {
       const currentOrder = [...userRoot.globalProjectsOrder];
 
-      // Ensure the indices are valid bounds
-      if (
-        activeIndex >= 0 &&
-        activeIndex < currentOrder.length &&
-        overIndex >= 0 &&
-        overIndex < currentOrder.length
-      ) {
-        const [removed] = currentOrder.splice(activeIndex, 1);
-        currentOrder.splice(overIndex, 0, removed);
+      // 1. Isolate personal vs group collections
+      const personalIds = projects
+        .filter((p) => p.groupId === null)
+        .map((p) => p.id);
+      const groupIds = projects
+        .filter((p) => p.groupId !== null)
+        .map((p) => p.id);
 
-        set({
-          userSortOrders: {
-            ...userSortOrders,
-            [userId]: { ...userRoot, globalProjectsOrder: currentOrder },
-          },
-        });
+      const personalSorted = [...personalIds].sort(
+        (a, b) => currentOrder.indexOf(a) - currentOrder.indexOf(b),
+      );
+      const groupSorted = [...groupIds].sort(
+        (a, b) => currentOrder.indexOf(a) - currentOrder.indexOf(b),
+      );
+
+      // 2. Safely extract our incoming Drag IDs or fallback to index matching
+      let activeId = String(activeIndex);
+      let overId = String(overIndex);
+
+      // If the sidebar passes a raw number index from standard array loops, resolve the ID safely
+      if (typeof activeIndex === 'number') {
+        if (
+          projectId === 'group_design_team' ||
+          (projectId === null && activeIndex >= personalSorted.length)
+        ) {
+          activeId = groupSorted[activeIndex];
+        } else {
+          activeId = personalSorted[activeIndex];
+        }
       }
+
+      if (typeof overIndex === 'number') {
+        if (
+          projectId === 'group_design_team' ||
+          (projectId === null && overIndex >= groupSorted.length)
+        ) {
+          overId = groupSorted[overIndex];
+        } else {
+          overId = personalSorted[overIndex];
+        }
+      }
+
+      // 3. Execute array splicing positions
+      const updatedOrder = currentOrder.filter((id) => id !== activeId);
+
+      if (overId === 'APPEND_PERSONAL') {
+        const lastPersonalIdx = updatedOrder.findLastIndex((id) =>
+          personalIds.includes(id),
+        );
+        updatedOrder.splice(lastPersonalIdx + 1, 0, activeId);
+      } else if (overId === 'APPEND_GROUP') {
+        updatedOrder.push(activeId);
+      } else {
+        const targetIndex = updatedOrder.indexOf(overId);
+        if (targetIndex !== -1) {
+          updatedOrder.splice(targetIndex, 0, activeId);
+        }
+      }
+
+      set({
+        userSortOrders: {
+          ...userSortOrders,
+          [userId]: { ...userRoot, globalProjectsOrder: updatedOrder },
+        },
+      });
       return;
     }
 
-    // 2. Handle nested sub-page sorting isolated inside a specific project folder
+    // ---------------------------------------------------------------------
+    // 3. Handle nested sub-page sorting (Keeps SortableList happy)
+    // ---------------------------------------------------------------------
     if (!projectId) return;
     const fallbackPages = (pages[projectId] || []).map((p) => p.id);
     const currentPagesOrder = [
       ...(userRoot.projectPagesOrder[projectId] || fallbackPages),
     ];
 
+    // Convert to numbers explicitly for array splicing safety
+    const numActive = Number(activeIndex);
+    const numOver = Number(overIndex);
+
     if (
-      activeIndex >= 0 &&
-      activeIndex < currentPagesOrder.length &&
-      overIndex >= 0 &&
-      overIndex < currentPagesOrder.length
+      numActive >= 0 &&
+      numActive < currentPagesOrder.length &&
+      numOver >= 0 &&
+      numOver < currentPagesOrder.length
     ) {
-      const [removed] = currentPagesOrder.splice(activeIndex, 1);
-      currentPagesOrder.splice(overIndex, 0, removed);
+      const [removed] = currentPagesOrder.splice(numActive, 1);
+      currentPagesOrder.splice(numOver, 0, removed);
 
       set({
         userSortOrders: {

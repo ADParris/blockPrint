@@ -1,8 +1,7 @@
 import React from 'react';
-import { createConnectionKey } from '../../../state/canvasSlice'; // 🎯 Linked to your centralized key utility
-import type { CanvasBlock } from '../../../state/types';
-import { CommandMenu } from '../../../state/types';
+import { CommandMenus, type CanvasBlock } from '../../../state/types';
 import { useModalStore } from '../../../state/useModalStore';
+import { createConnectionKey } from '../../../state/useProjectStore';
 
 interface ConnectionLayerProps {
   blocks: CanvasBlock[];
@@ -236,7 +235,7 @@ const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  openMenu(CommandMenu.ArrowCommand, {
+                  openMenu(CommandMenus.ArrowCommand, {
                     top: e.clientY,
                     left: e.clientX,
                     arrowConnectionId: connectionKey,

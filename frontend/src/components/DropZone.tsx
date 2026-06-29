@@ -1,15 +1,23 @@
 // src/components/DropZone.tsx
 import React, { useState } from 'react';
+import type { ProgressState } from '../state/types';
 
 interface DropZoneProps {
   index: number;
-  onDropBlock: (activeId: string, targetIndex: number) => void;
-  size?: 'sm' | 'md' | 'lg'; // 🎯 Optional variant sizing
+  // 🎯 Updated to optionally supply the target lane back to the consumer
+  onDropBlock: (
+    activeId: string,
+    targetIndex: number,
+    columnId?: ProgressState,
+  ) => void;
+  columnId?: ProgressState; // 🎯 New optional prop for Kanban columns
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const DropZone: React.FC<DropZoneProps> = ({
   index,
   onDropBlock,
+  columnId,
   size = 'md',
 }) => {
   const [isOver, setIsOver] = useState(false);
@@ -28,21 +36,21 @@ const DropZone: React.FC<DropZoneProps> = ({
     setIsOver(false);
     const draggedBlockId = e.dataTransfer.getData('text/plain');
     if (draggedBlockId) {
-      onDropBlock(draggedBlockId, index);
+      // 🎯 Passes the columnId safely downstream if it's provided
+      onDropBlock(draggedBlockId, index, columnId);
     }
   };
 
-  // 🎯 Map your geometric variants to Tailwind layouts
   const sizeClasses = {
     sm: 'absolute left-0 right-0 h-1.5 -translate-y-1/2 z-20',
-    md: 'relative w-full h-8 -my-3 z-10', // Your original layout canvas config
-    lg: 'relative w-full h-12 -my-4 z-10',
+    md: `relative h-8 -my-3 z-10 ${columnId ? 'w-auto -mx-4' : 'w-full'}`,
+    lg: `relative h-12 -my-4 z-10 ${columnId ? 'w-auto -mx-4' : 'w-full'}`,
   };
 
   const indicatorSpacing = {
     sm: 'left-6 right-2 h-0.5',
-    md: 'left-8 right-4 h-0.5',
-    lg: 'left-12 right-6 h-1',
+    md: columnId ? 'left-4 right-4 h-0.5' : 'left-8 right-4 h-0.5',
+    lg: columnId ? 'left-4 right-4 h-1' : 'left-12 right-6 h-1',
   };
 
   return (

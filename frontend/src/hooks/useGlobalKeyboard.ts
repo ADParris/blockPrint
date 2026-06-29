@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { CommandMenu } from '../state/types';
+import { CommandMenus } from '../state/types';
 import { useModalStore } from '../state/useModalStore';
 
 export const useGlobalKeyboard = () => {
@@ -17,7 +17,7 @@ export const useGlobalKeyboard = () => {
         const top = rect.bottom + 4;
         const left = rect.left;
 
-        openMenu(CommandMenu.ArrowCommand, { top, left });
+        openMenu(CommandMenus.BlockCommand, { top, left });
         return true; // Short-circuit
       }
     }

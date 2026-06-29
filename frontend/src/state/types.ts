@@ -11,13 +11,6 @@ export interface BlockConnection {
 
 export type BlockType = 'h1' | 'h2' | 'h3' | 'p' | 'code' | 'image';
 
-export const LayoutMode = {
-  DocumentCanvas: 'DOCUMENT_CANVAS',
-  SpatialCanvas: 'SPATIAL_CANVAS',
-} as const;
-
-export type LayoutModeType = (typeof LayoutMode)[keyof typeof LayoutMode];
-
 export interface XYPosition {
   x: number;
   y: number;
@@ -36,6 +29,7 @@ export interface BaseBlock {
 export interface CanvasBlock extends BaseBlock {
   position?: { x: number; y: number };
   connections?: BlockConnection[];
+  // 🎯 Independent layout data for the Kanban board view
 }
 
 // --- 2. Collaboration & Status Schemas (New Additions) ---
@@ -57,7 +51,7 @@ export interface UserProjectOrders {
   projectPagesOrder: Record<string, string[]>; // Map of projectId -> sorted pageId[]
 }
 
-export type ProgressState = 'Pending' | 'InProgress' | 'Done';
+export type ProgressState = 'Pending' | 'InProgress' | 'Completed';
 export type ProjectStatus = 'On Track' | 'At Risk' | 'Delayed';
 
 export interface HistoryEntry {
@@ -75,6 +69,7 @@ export const WorkspaceViewMode = {
   ProjectDashboard: 'PROJECT_DASHBOARD',
   PageDocument: 'PAGE_DOCUMENT',
   PageCanvas: 'PAGE_CANVAS',
+  PageKanban: 'PAGE_KANBAN',
 } as const;
 
 export type WorkspaceViewModeType =
@@ -107,8 +102,11 @@ export interface Page {
   projectId: string;
   title: string;
   status: ProgressState;
-  layoutMode: LayoutModeType;
   blocks: CanvasBlock[];
+  kanban?: {
+    columnId: ProgressState; // 'Pending' | 'In Progress' | 'Completed'
+    orderIndex: number;
+  };
   headerTitle?: string;
   coverImage?: string;
   lastEditedBy: {
@@ -134,12 +132,12 @@ export interface Project {
 }
 
 // --- 4. Ephemeral UI Commands & Menus (Preserved) ---
-export const CommandMenu = {
+export const CommandMenus = {
   ArrowCommand: 'ARROW_COMMAND',
   BlockCommand: 'BLOCK_COMMAND',
 } as const;
 
-export type CommandMenuType = (typeof CommandMenu)[keyof typeof CommandMenu];
+export type CommandMenusType = (typeof CommandMenus)[keyof typeof CommandMenus];
 
 export const BaseElement = {
   Project: 'PROJECT',
@@ -206,8 +204,8 @@ export interface ProjectState {
   ) => void;
   reorderSidebarItems: (
     projectId: string | null, // null for top-level global project folders
-    activeIndex: number,
-    overIndex: number,
+    activeIndex: string | number,
+    overIndex: string | number,
     type: Omit<BaseElementType, 'Block'>,
   ) => void;
   deleteProject: (projectId: string) => void;
@@ -222,7 +220,6 @@ export interface ProjectState {
   insertBlockAtIndex: (targetIndex?: number, initialContent?: string) => string;
 
   // --- 6. Canvas Slice Actions ---
-  setLayoutMode: (mode: LayoutModeType) => void; // 🎯 Added missing toggle handle contract
   setCameraOffset: (
     offset: XYPosition | ((prev: XYPosition) => XYPosition),
   ) => void;
@@ -235,7 +232,18 @@ export interface ProjectState {
   setImageCacheUrl: (blockId: string, url: string) => void;
   clearImageCache: () => void;
 
-  // --- 8. Core Sync Actions ---
+  // --- 8. Kanban Slice Actions ---
+  getProjectPages: (columnId: ProgressState) => Page[];
+  movePageInKanban: (
+    blockId: string,
+    targetColumnId: ProgressState,
+    targetIndex: number,
+  ) => void;
+
+  // --- 9. Workspace Navigation Actions ---
+  setWorkspaceViewMode: (mode: WorkspaceViewModeType) => void;
+
+  // --- 10. Core Sync Actions ---
   loadFromBackend: () => Promise<void>;
   syncToBackend: () => Promise<void>;
 }

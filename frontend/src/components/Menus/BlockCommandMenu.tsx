@@ -1,6 +1,6 @@
-import type { BlockType } from '../state/types';
-import { useModalStore } from '../state/useModalStore';
-import { useProjectStore } from '../state/useProjectStore';
+import type { BlockType } from '../../state/types';
+import { useModalStore } from '../../state/useModalStore';
+import { useProjectStore } from '../../state/useProjectStore';
 
 interface CommandItem {
   label: string;
@@ -32,7 +32,10 @@ const BlockCommandMenu: React.FC = () => {
   ];
 
   const handleCommandSelect = (type: BlockType) => {
-    updateBlockType(activeBlockId, type);
+    if (activeBlockId) {
+      updateBlockType(activeBlockId, type);
+    }
+
     closeMenu();
   };
 
@@ -44,7 +47,7 @@ const BlockCommandMenu: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-w-[170px] bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl select-none">
+    <div className="flex flex-col min-w-42.5 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl select-none">
       {commands.map((command) => (
         <div
           key={command.type}
@@ -55,7 +58,7 @@ const BlockCommandMenu: React.FC = () => {
         </div>
       ))}
 
-      <div className="h-[1px] bg-slate-800/60 my-1 mx-1" />
+      <div className="h-px bg-slate-800/60 my-1 mx-1" />
 
       <div
         onClick={handleDeleteSelect}

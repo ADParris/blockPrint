@@ -7,7 +7,7 @@ import {
   LuLayers,
   LuSquareCheck,
 } from 'react-icons/lu';
-import { useProjectStore } from '../state/useProjectStore';
+import { useProjectStore } from '../../state/useProjectStore';
 
 interface WorkspaceLog {
   id: string;

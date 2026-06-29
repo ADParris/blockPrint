@@ -6,6 +6,7 @@ import { createCanvasSlice } from './canvasSlice';
 import { createDocumentSlice } from './documentSlice';
 import { createImageSlice } from './imageSlice';
 import { createProjectSlice } from './projectSlice';
+import { createKanbanSlice } from './kanbanSlice';
 import type { ProjectState } from './types';
 import { WorkspaceViewMode } from './types';
 
@@ -50,6 +51,11 @@ export const useProjectStore = create<ProjectState>()(
       ...createCanvasSlice(set, get),
       ...createDocumentSlice(set, get),
       ...createImageSlice(set, get),
+      ...createKanbanSlice(set, get),
+
+      setWorkspaceViewMode: (mode) => {
+        set({ activeViewMode: mode });
+      },
 
       // 🎯 PIPELINE BACKEND RESTORATION (Only runs if IndexedDB is blank)
       loadFromBackend: async () => {

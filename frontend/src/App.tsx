@@ -1,22 +1,13 @@
 // src/App.tsx
-import { Navigate, Route, Routes } from 'react-router-dom'; // 🎯 Import the route components
-import { GlobalCanvas } from './components/Canvases/GlobalCanvas';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import { LayoutMode } from './state/types';
+import GlobalView from './components/Views/GlobalView';
+import { WorkspaceViewMode } from './state/types';
 import { useProjectStore } from './state/useProjectStore';
 
 function App() {
-  const layoutMode = useProjectStore((state) => {
-    const { activeProjectId, activePageId, pages } = state;
-    if (!activeProjectId || !activePageId || !pages[activeProjectId]) {
-      return LayoutMode.DocumentCanvas;
-    }
-
-    const activePage = pages[activeProjectId].find(
-      (p) => p.id === activePageId,
-    );
-    return activePage?.layoutMode ?? LayoutMode.DocumentCanvas;
-  });
+  // 🎯 Single source of truth check for setting global overflow parameters
+  const activeViewMode = useProjectStore((state) => state.activeViewMode);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
@@ -26,7 +17,7 @@ function App() {
 
       <div
         className={`flex-1 h-full custom-scrollbar ${
-          layoutMode === LayoutMode.DocumentCanvas
+          activeViewMode === WorkspaceViewMode.PageDocument
             ? 'overflow-y-auto'
             : 'overflow-hidden'
         }`}
@@ -37,14 +28,14 @@ function App() {
           <Route path="/" element={<Navigate to="/ADParris" replace />} />
 
           {/* This route catches namespaces, project IDs, AND page IDs all under one roof */}
-          <Route path="/:namespace" element={<GlobalCanvas />} />
+          <Route path="/:namespace" element={<GlobalView />} />
           <Route
             path="/:namespace/projects/:projectId"
-            element={<GlobalCanvas />}
+            element={<GlobalView />}
           />
           <Route
             path="/:namespace/projects/:projectId/pages/:pageId"
-            element={<GlobalCanvas />}
+            element={<GlobalView />}
           />
 
           {/* Catch-all fallback */}

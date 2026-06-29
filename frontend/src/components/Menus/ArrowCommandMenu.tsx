@@ -1,6 +1,6 @@
 // src/components/Menus/ArrowCommandMenu.tsx
 import React from 'react';
-import { useProjectStore } from '../state/useProjectStore';
+import { useProjectStore } from '../../state/useProjectStore';
 
 interface ArrowCommandMenuProps {
   connectionId: string;

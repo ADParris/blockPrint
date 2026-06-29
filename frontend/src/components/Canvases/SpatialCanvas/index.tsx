@@ -1,8 +1,9 @@
 // src/components/Canvases/SpatialCanvas.tsx
 import React, { useRef } from 'react';
 import { useSpatialMouse } from '../../../hooks/useSpacialMouse';
+import { WorkspaceViewMode } from '../../../state/types';
 import { useProjectStore } from '../../../state/useProjectStore';
-import Card from './Card';
+import Card from '../../Card';
 import ConnectionLayer from './ConnectionLayer';
 
 const SpatialCanvas: React.FC = () => {
@@ -76,12 +77,22 @@ const SpatialCanvas: React.FC = () => {
         <div className="absolute inset-0 pointer-events-none z-10">
           {activePage.blocks.map((block, index) => (
             <Card
+              viewContext={WorkspaceViewMode.PageCanvas}
               key={block.id}
               block={block}
               index={index}
               isPanning={mouseState.isPanning}
               isActiveDrag={mouseState.activeDragId === block.id}
-            />
+            >
+              <div className="text-[10px] uppercase font-bold tracking-wider text-blue-400 mb-1 pointer-events-none">
+                {block.type || 'p'} Element
+              </div>
+              <div className="pointer-events-none">
+                {block.content || (
+                  <span className="text-slate-600 italic">Empty block</span>
+                )}
+              </div>
+            </Card>
           ))}
         </div>
       </div>

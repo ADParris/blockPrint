@@ -1,5 +1,5 @@
 // src/state/canvasSlice.ts
-import type { AnchorDirection, LayoutModeType, StoreSlice } from './types';
+import type { AnchorDirection, StoreSlice } from './types';
 
 // 🎯 CENTRALIZED KEY UTILITIES
 export const createConnectionKey = (
@@ -24,7 +24,6 @@ const parseConnectionKey = (key: string) => {
 };
 
 export interface CanvasSlice {
-  setLayoutMode: (mode: LayoutModeType) => void;
   cameraOffset: { x: number; y: number };
   zoomScale: number;
   setCameraOffset: (
@@ -44,26 +43,6 @@ export interface CanvasSlice {
 export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
   cameraOffset: { x: 0, y: 0 },
   zoomScale: 1,
-
-  setLayoutMode: (mode) => {
-    const { activeProjectId, activePageId, pages } = get();
-    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
-
-    const updatedPages = pages[activeProjectId].map((page) => {
-      if (page.id !== activePageId) return page;
-      return {
-        ...page,
-        layoutMode: mode,
-        lastEditedBy: {
-          userId: get().currentUser?.id || 'unknown',
-          userName: get().currentUser?.name || 'Unknown',
-          timestamp: Date.now(),
-        },
-      };
-    });
-
-    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
-  },
 
   setCameraOffset: (offset) => {
     const nextOffset =

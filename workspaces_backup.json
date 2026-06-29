@@ -3,10 +3,10 @@
   "u1": {
     "projects": [
       {
-        "id": "proj_1782621482325",
+        "id": "proj_1782688016652",
         "name": "blockPrint PM",
         "description": "",
-        "createdAt": 1782621482325,
+        "createdAt": 1782688016652,
         "status": "On Track",
         "teamMembers": [
           "u1",
@@ -15,11 +15,178 @@
         ],
         "groupId": "group_design_team",
         "isPublicShareable": false
+      },
+      {
+        "id": "proj_1782693627719",
+        "name": "Personal Project",
+        "description": "",
+        "createdAt": 1782693627719,
+        "status": "On Track",
+        "teamMembers": [
+          "u1"
+        ],
+        "groupId": null,
+        "isPublicShareable": false
+      },
+      {
+        "id": "proj_1782693751125",
+        "name": "Project 2",
+        "description": "",
+        "createdAt": 1782693751125,
+        "status": "On Track",
+        "teamMembers": [
+          "u1"
+        ],
+        "groupId": null,
+        "isPublicShareable": false
       }
     ],
     "pages": {
-      "proj_1782621482325": []
+      "proj_1782688016652": [
+        {
+          "id": "page_1782688187998",
+          "projectId": "proj_1782688016652",
+          "title": "Feature: Dashboard: View",
+          "status": "Pending",
+          "lastEditedBy": {
+            "userId": "u1",
+            "userName": "ADParris",
+            "timestamp": 1782702580234
+          },
+          "blocks": [
+            {
+              "id": "117689a4-b2be-4a86-922e-2bf3b8d03812",
+              "type": "p",
+              "content": "Block A",
+              "position": {
+                "x": 160,
+                "y": 120
+              },
+              "connections": [
+                {
+                  "targetId": "67457c74-f546-4be1-b49c-10cda9298c8b",
+                  "sourceDir": "right",
+                  "targetDir": "left"
+                },
+                {
+                  "targetId": "67457c74-f546-4be1-b49c-10cda9298c8b",
+                  "sourceDir": "top",
+                  "targetDir": "top"
+                }
+              ]
+            },
+            {
+              "id": "67457c74-f546-4be1-b49c-10cda9298c8b",
+              "type": "p",
+              "content": "Block B",
+              "position": {
+                "x": 560,
+                "y": 120
+              },
+              "connections": [
+                {
+                  "targetId": "e793b548-1b09-4f0c-a124-c23168be743e",
+                  "sourceDir": "bottom",
+                  "targetDir": "top"
+                },
+                {
+                  "targetId": "e793b548-1b09-4f0c-a124-c23168be743e",
+                  "sourceDir": "right",
+                  "targetDir": "right"
+                }
+              ]
+            },
+            {
+              "id": "ee298c29-6b69-42c5-a5f3-c68f406c79e7",
+              "type": "p",
+              "content": "Block C",
+              "position": {
+                "x": 160,
+                "y": 440
+              },
+              "connections": [
+                {
+                  "targetId": "117689a4-b2be-4a86-922e-2bf3b8d03812",
+                  "sourceDir": "top",
+                  "targetDir": "bottom"
+                },
+                {
+                  "targetId": "117689a4-b2be-4a86-922e-2bf3b8d03812",
+                  "sourceDir": "left",
+                  "targetDir": "left"
+                }
+              ]
+            },
+            {
+              "id": "e793b548-1b09-4f0c-a124-c23168be743e",
+              "type": "p",
+              "content": "Block D",
+              "position": {
+                "x": 560,
+                "y": 440
+              },
+              "connections": [
+                {
+                  "targetId": "ee298c29-6b69-42c5-a5f3-c68f406c79e7",
+                  "sourceDir": "left",
+                  "targetDir": "right"
+                },
+                {
+                  "targetId": "ee298c29-6b69-42c5-a5f3-c68f406c79e7",
+                  "sourceDir": "bottom",
+                  "targetDir": "bottom"
+                }
+              ]
+            }
+          ],
+          "kanban": {
+            "columnId": "InProgress",
+            "orderIndex": 0
+          }
+        }
+      ],
+      "proj_1782693627719": [
+        {
+          "id": "page_1782693694892",
+          "projectId": "proj_1782693627719",
+          "title": "Page 1",
+          "status": "Pending",
+          "lastEditedBy": {
+            "userId": "u1",
+            "userName": "ADParris",
+            "timestamp": 1782693694892
+          },
+          "blocks": []
+        },
+        {
+          "id": "page_1782693703245",
+          "projectId": "proj_1782693627719",
+          "title": "Page 2",
+          "status": "Pending",
+          "lastEditedBy": {
+            "userId": "u1",
+            "userName": "ADParris",
+            "timestamp": 1782693703245
+          },
+          "blocks": []
+        }
+      ],
+      "proj_1782693751125": []
     },
-    "userSortOrders": {}
+    "userSortOrders": {
+      "u1": {
+        "globalProjectsOrder": [
+          "proj_1782688016652",
+          "proj_1782693627719",
+          "proj_1782693751125"
+        ],
+        "projectPagesOrder": {
+          "proj_1782693627719": [
+            "page_1782693694892",
+            "page_1782693703245"
+          ]
+        }
+      }
+    }
   }
 }

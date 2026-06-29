@@ -1,6 +1,5 @@
-// src/hooks/useDocumentKeyboard.ts
 import type { KeyboardEvent } from 'react';
-import { LayoutMode } from '../state/types';
+import { WorkspaceViewMode } from '../state/types';
 import { useModalStore } from '../state/useModalStore';
 import { useProjectStore } from '../state/useProjectStore';
 
@@ -9,6 +8,7 @@ export const useDocumentKeyboard = () => {
   const activeProjectId = useProjectStore((state) => state.activeProjectId);
   const activePageId = useProjectStore((state) => state.activePageId);
   const pages = useProjectStore((state) => state.pages);
+  const activeViewMode = useProjectStore((state) => state.activeViewMode);
 
   // Core modification actions
   const updateBlockContent = useProjectStore(
@@ -28,12 +28,10 @@ export const useDocumentKeyboard = () => {
     // 2. Resolve the active page object safely at the runtime execution frame
     const projectPages = pages[activeProjectId || ''] || [];
     const currentPage = projectPages.find((page) => page.id === activePageId);
-
-    const layoutMode = currentPage?.layoutMode;
     const blocks = currentPage?.blocks || [];
 
-    // 3. Bail immediately if we aren't in linear Document Mode
-    if (layoutMode !== LayoutMode.DocumentCanvas) return false;
+    // 🎯 3. Guard against the global active view mode instead of the stale property
+    if (activeViewMode !== WorkspaceViewMode.PageDocument) return false;
 
     const target = e.target as HTMLTextAreaElement;
     const blockId = target.getAttribute('data-block-id');
