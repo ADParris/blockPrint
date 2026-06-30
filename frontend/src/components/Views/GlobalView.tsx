@@ -1,11 +1,12 @@
 // src/components/Canvases/GlobalCanvas.tsx
 import React, { useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCanvasKeyboard } from '../../hooks/useCanvasKeyboard';
 import {
   CommandMenus,
   WorkspaceViewMode,
   type CommandMenusType,
+  type WorkspaceViewModeType,
 } from '../../state/types';
 import { useModalStore } from '../../state/useModalStore';
 import { useProjectStore } from '../../state/useProjectStore';
@@ -14,12 +15,15 @@ import SpatialCanvas from '../Canvases/SpatialCanvas';
 import ArrowCommandMenu from '../Menus/ArrowCommandMenu';
 import BlockCommandMenu from '../Menus/BlockCommandMenu';
 import Modal from '../Modal';
-import { PageKanbanView } from './PageKanbanView'; // 🎯 Import our new view panel
+import Sidebar from '../Sidebar';
+import { BlockKanbanView } from './BlockKanbanView';
+import { PageKanbanView } from './PageKanbanView';
 import { ProjectDashboardView } from './ProjectDashboardView';
 
 const GlobalView: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 🎯 1. Extract parameters straight from the browser URL address bar
   const { namespace, projectId, pageId } = useParams<{
@@ -45,17 +49,65 @@ const GlobalView: React.FC = () => {
 
   const { activeMenuId, position, openMenu, closeMenu } = useModalStore();
 
-  // 🎯 2. Keep Zustand synchronized AND intercept dead/deleted paths
+  // 🎯 Keep Zustand synchronized AND intercept dead/deleted paths
   useEffect(() => {
     if (isLoading) return;
 
     setActiveProjectId(projectId || null);
     setActivePageId(pageId || null);
 
-    // 🛡️ ROUTER GUARD: If the URL has a projectId, verify that it actually exists in our store
+    const currentViewMode = useProjectStore.getState().activeViewMode;
+    const isRoadmap = location.pathname.endsWith('/roadmap');
+    const isCanvas = location.pathname.endsWith('/canvas');
+
+    // 🎯 1. Handle Page-Level Context View Modes
+    if (pageId) {
+      if (isRoadmap) {
+        if (currentViewMode !== WorkspaceViewMode.PageKanban) {
+          useProjectStore.setState({
+            activeViewMode: WorkspaceViewMode.PageKanban,
+          });
+        }
+      } else if (isCanvas) {
+        if (currentViewMode !== WorkspaceViewMode.PageCanvas) {
+          useProjectStore.setState({
+            activeViewMode: WorkspaceViewMode.PageCanvas,
+          });
+        }
+      } else {
+        // 🎯 Cast the array as the broader WorkspaceViewModeType[] to satisfy .includes()
+        const validPageModes: WorkspaceViewModeType[] = [
+          WorkspaceViewMode.PageDocument,
+          WorkspaceViewMode.PageCanvas,
+        ];
+
+        if (!validPageModes.includes(currentViewMode)) {
+          useProjectStore.setState({
+            activeViewMode: WorkspaceViewMode.PageDocument,
+          });
+        }
+      }
+    }
+    // 🎯 2. Handle Project-Level Context View Modes (Runs ONLY if pageId is missing)
+    else if (projectId) {
+      if (isRoadmap) {
+        if (currentViewMode !== WorkspaceViewMode.PageKanban) {
+          useProjectStore.setState({
+            activeViewMode: WorkspaceViewMode.PageKanban,
+          });
+        }
+      } else {
+        if (currentViewMode !== WorkspaceViewMode.ProjectDashboard) {
+          useProjectStore.setState({
+            activeViewMode: WorkspaceViewMode.ProjectDashboard,
+          });
+        }
+      }
+    }
+
+    // 🛡️ ROUTER GUARD: Verify project exists
     if (projectId) {
       const projectExists = projects.some((p) => p.id === projectId);
-
       if (!projectExists) {
         console.warn(
           'Viewing a deleted or invalid project. Redirecting to home...',
@@ -66,6 +118,7 @@ const GlobalView: React.FC = () => {
   }, [
     projectId,
     pageId,
+    location.pathname,
     projects,
     isLoading,
     namespace,
@@ -81,6 +134,10 @@ const GlobalView: React.FC = () => {
       : null;
 
   const handleCanvasClick = (e: React.MouseEvent) => {
+    if (activeViewMode !== WorkspaceViewMode.PageDocument) {
+      return;
+    }
+
     const target = e.target as HTMLElement;
 
     if (target.closest('[data-drag-handle-for]')) {
@@ -173,8 +230,18 @@ const GlobalView: React.FC = () => {
   };
 
   // 🎯 4. The Router-Driven View Switch Engine
-  const currentLayout = () => {
-    // 🎯 1. Highest Priority: If there's a pageId in the URL, immediately look at activeViewMode state
+  const renderMainContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 text-zinc-400">
+          <div className="text-lg font-medium animate-pulse">
+            Loading workspace...
+          </div>
+        </div>
+      );
+    }
+
+    // 🎯 1. Highest Priority: If there's a pageId in the URL, handle page-level routing
     if (pageId) {
       if (!activePage) {
         return (
@@ -184,20 +251,40 @@ const GlobalView: React.FC = () => {
         );
       }
 
-      // Route layout layers dynamically using our explicit panel views
+      // 🎯 Micro check: If we are looking at a page, and it explicitly ends with roadmap
+      if (location.pathname.endsWith('/roadmap')) {
+        return <BlockKanbanView />;
+      }
+
+      // Standard page canvas views fallback
       switch (activeViewMode) {
         case WorkspaceViewMode.PageCanvas:
           return <SpatialCanvas />;
-        case WorkspaceViewMode.PageKanban:
-          return <PageKanbanView />; // 🎯 Render our beautiful Kanban block list
         case WorkspaceViewMode.PageDocument:
         default:
           return <DocumentCanvas />;
       }
     }
 
-    // 🎯 2. Secondary Priority: If there's a projectId in the URL but no pageId, show the Dashboard
+    // 🎯 2. Secondary Priority: Project-level views (Runs ONLY if pageId is missing)
     if (projectId) {
+      // Macro check: It ends with /roadmap and we already know pageId doesn't exist
+      if (location.pathname.endsWith('/roadmap')) {
+        return <PageKanbanView />;
+      }
+
+      // Default fallback when looking strictly at the project root path
+      return <ProjectDashboardView />;
+    }
+
+    // 🎯 2. Secondary Priority: If there's a projectId in the URL but no pageId, show the Roadmap or Dashboard
+    if (projectId) {
+      // 💡 If your sidebar's "Kanban" button sets view mode to PageKanban when no page is active,
+      // or if you want the project root view to be the overview roadmap:
+      if (activeViewMode === WorkspaceViewMode.PageKanban) {
+        return <PageKanbanView />;
+      }
+
       return <ProjectDashboardView />;
     }
 
@@ -214,32 +301,36 @@ const GlobalView: React.FC = () => {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        <div className="text-lg font-medium animate-pulse">
-          Loading workspace...
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <main
-      ref={containerRef}
-      className="w-full h-full min-h-full outline-none"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onClick={handleCanvasClick}
-    >
-      {currentLayout()}
+    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
+      <aside className="w-64 h-full border-r border-slate-800/60 bg-zinc-900 shrink-0">
+        <Sidebar />
+      </aside>
 
-      {isValidMenu && activeMenuId && (
-        <Modal menuPosition={position} onClose={closeMenu}>
-          {currentMenu(activeMenuId)}
-        </Modal>
-      )}
-    </main>
+      <div
+        className={`flex-1 h-full custom-scrollbar ${
+          activeViewMode === WorkspaceViewMode.PageDocument
+            ? 'overflow-y-auto'
+            : 'overflow-hidden'
+        }`}
+      >
+        <main
+          ref={containerRef}
+          className="w-full h-full min-h-full outline-none"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          onClick={handleCanvasClick}
+        >
+          {renderMainContent()}
+
+          {isValidMenu && activeMenuId && (
+            <Modal menuPosition={position} onClose={closeMenu}>
+              {currentMenu(activeMenuId)}
+            </Modal>
+          )}
+        </main>
+      </div>
+    </div>
   );
 };
 

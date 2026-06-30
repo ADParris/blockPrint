@@ -2,6 +2,7 @@ import React from 'react';
 import { LuFolder, LuPlus } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import { WorkspaceViewMode, type Page, type Project } from '../../state/types';
+import { paths } from '../../utils/routes';
 import SortableList from '../SortableList';
 import { SidebarPageItem } from './SidebarPageItem';
 
@@ -46,8 +47,7 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
       <div className="group relative flex items-center w-full">
         <button
           onClick={() => {
-            // 🎯 Fixed: Now properly using targetNamespace for dynamic routing!
-            navigate(`/${targetNamespace}/projects/${project.id}`);
+            navigate(paths.projectDashboard(targetNamespace, project.id));
           }}
           className={`flex items-center w-full text-left pl-2 pr-14 py-1.5 text-sm rounded-md transition-all duration-150 truncate ${
             isDashboardActive

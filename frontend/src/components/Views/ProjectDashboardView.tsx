@@ -1,4 +1,3 @@
-// src/components/ProjectDashboardView.tsx
 import React from 'react';
 import {
   LuActivity,
@@ -7,7 +6,10 @@ import {
   LuLayers,
   LuSquareCheck,
 } from 'react-icons/lu';
+import { useNavigate, useParams } from 'react-router-dom';
+import { WorkspaceViewMode } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
+import { paths } from '../../utils/routes';
 
 interface WorkspaceLog {
   id: string;
@@ -17,9 +19,15 @@ interface WorkspaceLog {
 }
 
 export const ProjectDashboardView: React.FC = () => {
-  const { projects, activeProjectId, pages } = useProjectStore(
-    (state) => state,
-  );
+  // 🎯 Pull in actions for routing
+  const { projects, activeProjectId, pages, setWorkspaceViewMode } =
+    useProjectStore((state) => state);
+
+  const navigate = useNavigate();
+  const { namespace, projectId } = useParams<{
+    namespace: string;
+    projectId: string;
+  }>();
 
   // Find the active project instance details
   const project = projects.find((p) => p.id === activeProjectId);
@@ -45,6 +53,12 @@ export const ProjectDashboardView: React.FC = () => {
       type: 'info',
     },
   ];
+
+  // 🎯 Clear the active page context and set workspace view mode to Kanban
+  const handleRouteToRoadmap = () => {
+    setWorkspaceViewMode(WorkspaceViewMode.PageKanban);
+    navigate(paths.projectRoadmap(namespace || 'ADParris', projectId!));
+  };
 
   if (!project) {
     return (
@@ -91,15 +105,35 @@ export const ProjectDashboardView: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-5 flex items-center space-x-4">
-              <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg">
-                <LuClock className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-200">Active</div>
-                <div className="text-xs text-slate-500 uppercase font-semibold tracking-wider">
-                  Workspace Status
+            {/* 🎯 Updated interactive gateway card */}
+            <div
+              onClick={handleRouteToRoadmap}
+              className="group relative bg-slate-900/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-slate-900/60 transition-all duration-200 rounded-xl p-5 flex flex-col justify-between cursor-pointer select-none min-h-25.5"
+            >
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-amber-500/10 text-amber-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors rounded-lg">
+                    <LuClock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-200 group-hover:text-white transition-colors">
+                      {project.status || 'Active'}
+                    </div>
+                    <div className="text-xs text-slate-500 uppercase font-semibold tracking-wider">
+                      Project Status
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              <div className="mt-4 pt-2 border-t border-slate-800/40 flex items-center justify-between text-[10px] tracking-wide text-slate-500 font-medium">
+                <span>Pipeline Tracking</span>
+                <span className="text-blue-400 font-semibold flex items-center gap-0.5 transition-colors group-hover:text-blue-300">
+                  View Roadmap{' '}
+                  <span className="transform group-hover:translate-x-0.5 transition-transform duration-200">
+                    →
+                  </span>
+                </span>
               </div>
             </div>
           </div>

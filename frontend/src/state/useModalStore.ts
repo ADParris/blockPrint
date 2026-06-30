@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CommandMenuType } from './types';
+import type { CommandMenusType } from './types';
 
 // 🎯 Define an extended position type that optionally holds a connection target string
 interface MenuPosition {
@@ -9,8 +9,8 @@ interface MenuPosition {
 }
 
 interface ModalState {
-  activeMenuId: CommandMenuType | null;
-  openMenu: (id: CommandMenuType, position: MenuPosition) => void;
+  activeMenuId: CommandMenusType | null;
+  openMenu: (id: CommandMenusType, position: MenuPosition) => void;
   closeMenu: () => void;
   position: MenuPosition | null;
 }

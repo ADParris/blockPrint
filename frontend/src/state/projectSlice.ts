@@ -41,8 +41,8 @@ export interface ProjectActions {
   addFeedPost: (content: string) => void;
   reorderSidebarItems: (
     projectId: string | null, // null for top-level global project folders
-    activeIndex: number,
-    overIndex: number,
+    activeIndex: string | number,
+    overIndex: string | number,
     type: Omit<BaseElementType, 'Block'>,
   ) => void;
   deleteProject: (projectId: string) => void;
@@ -282,55 +282,31 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       projectPagesOrder: {},
     };
 
-    if (type === 'project') {
-      const currentOrder = [...userRoot.globalProjectsOrder];
+    if (type === BaseElement.Project) {
+      // 1. Establish the pure baseline from your current projects state
+      const baselineOrder = projects.map((p) => p.id);
 
-      // 1. Isolate personal vs group collections
-      const personalIds = projects
-        .filter((p) => p.groupId === null)
-        .map((p) => p.id);
-      const groupIds = projects
-        .filter((p) => p.groupId !== null)
-        .map((p) => p.id);
+      // 2. Safely extract the existing order array from userSortOrders using the resolved userId
+      const existingOrder = userSortOrders[userId]?.globalProjectsOrder;
+      const currentOrder = existingOrder?.length
+        ? [...existingOrder]
+        : [...baselineOrder];
 
-      const personalSorted = [...personalIds].sort(
-        (a, b) => currentOrder.indexOf(a) - currentOrder.indexOf(b),
-      );
-      const groupSorted = [...groupIds].sort(
-        (a, b) => currentOrder.indexOf(a) - currentOrder.indexOf(b),
-      );
+      // 3. Make absolutely sure no newly created projects got left behind
+      baselineOrder.forEach((id) => {
+        if (!currentOrder.includes(id)) currentOrder.push(id);
+      });
 
-      // 2. Safely extract our incoming Drag IDs or fallback to index matching
-      let activeId = String(activeIndex);
-      let overId = String(overIndex);
+      const activeId = String(activeIndex);
+      const overId = String(overIndex);
 
-      // If the sidebar passes a raw number index from standard array loops, resolve the ID safely
-      if (typeof activeIndex === 'number') {
-        if (
-          projectId === 'group_design_team' ||
-          (projectId === null && activeIndex >= personalSorted.length)
-        ) {
-          activeId = groupSorted[activeIndex];
-        } else {
-          activeId = personalSorted[activeIndex];
-        }
-      }
-
-      if (typeof overIndex === 'number') {
-        if (
-          projectId === 'group_design_team' ||
-          (projectId === null && overIndex >= groupSorted.length)
-        ) {
-          overId = groupSorted[overIndex];
-        } else {
-          overId = personalSorted[overIndex];
-        }
-      }
-
-      // 3. Execute array splicing positions
+      // 4. Strip the dragged item out and splice it back into its new position
       const updatedOrder = currentOrder.filter((id) => id !== activeId);
 
       if (overId === 'APPEND_PERSONAL') {
+        const personalIds = projects
+          .filter((p) => p.groupId === null)
+          .map((p) => p.id);
         const lastPersonalIdx = updatedOrder.findLastIndex((id) =>
           personalIds.includes(id),
         );
@@ -341,13 +317,19 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
         const targetIndex = updatedOrder.indexOf(overId);
         if (targetIndex !== -1) {
           updatedOrder.splice(targetIndex, 0, activeId);
+        } else {
+          updatedOrder.push(activeId); // Safety fallback catch
         }
       }
 
+      // 5. Commit clean state back to the store
       set({
         userSortOrders: {
           ...userSortOrders,
-          [userId]: { ...userRoot, globalProjectsOrder: updatedOrder },
+          [userId]: {
+            ...(userSortOrders[userId] || { projectPagesOrder: {} }),
+            globalProjectsOrder: updatedOrder,
+          },
         },
       });
       return;

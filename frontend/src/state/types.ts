@@ -29,7 +29,10 @@ export interface BaseBlock {
 export interface CanvasBlock extends BaseBlock {
   position?: { x: number; y: number };
   connections?: BlockConnection[];
-  // 🎯 Independent layout data for the Kanban board view
+  kanban?: {
+    columnId: ProgressState; // 'Pending' | 'In Progress' | 'Completed'
+    orderIndex: number;
+  };
 }
 
 // --- 2. Collaboration & Status Schemas (New Additions) ---
@@ -95,8 +98,19 @@ export interface ChangeLogEntry {
 }
 
 // --- 3. Shifting Notebooks to Projects & Pages ---
+export interface KanbanColumn {
+  id: ProgressState; // e.g., 'Pending', 'In Progress', 'Completed'
+  label: string;
+}
 
-// A Page now owns the structural canvas/document blocks that used to sit on the Notebook
+export interface GenericKanbanItem {
+  id: string;
+  kanban?: {
+    columnId: ProgressState; // 'Pending' | 'In Progress' | 'Completed'
+    orderIndex: number;
+  };
+}
+
 export interface Page {
   id: string;
   projectId: string;
@@ -233,6 +247,12 @@ export interface ProjectState {
   clearImageCache: () => void;
 
   // --- 8. Kanban Slice Actions ---
+  getPageBlocks: (columnId: ProgressState) => CanvasBlock[];
+  moveBlockInKanban: (
+    blockId: string,
+    targetColumnId: ProgressState,
+    targetIndex: number,
+  ) => void;
   getProjectPages: (columnId: ProgressState) => Page[];
   movePageInKanban: (
     blockId: string,

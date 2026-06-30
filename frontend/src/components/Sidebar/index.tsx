@@ -143,7 +143,12 @@ const Sidebar = () => {
                         index={index}
                         size="sm"
                         onDropBlock={(activeId) =>
-                          reorderSidebarItems(null, activeId, index, 'project')
+                          reorderSidebarItems(
+                            null,
+                            activeId,
+                            project.id,
+                            BaseElement.Project,
+                          )
                         }
                       />
                       <SidebarProjectItem
@@ -171,7 +176,7 @@ const Sidebar = () => {
                             project.id,
                             activeIndex,
                             overIndex,
-                            'page',
+                            BaseElement.Page,
                           )
                         }
                         activeMenuTargetId={activeMenu?.targetId}
@@ -189,8 +194,8 @@ const Sidebar = () => {
                     reorderSidebarItems(
                       null,
                       activeId,
-                      personalProjects.length,
-                      'project',
+                      'APPEND_PERSONAL',
+                      BaseElement.Project,
                     )
                   }
                 />
@@ -235,7 +240,7 @@ const Sidebar = () => {
                       size="sm"
                       onDropBlock={(activeId) =>
                         reorderSidebarItems(
-                          null,
+                          'group_design_team',
                           activeId,
                           project.id,
                           BaseElement.Project,
@@ -278,7 +283,7 @@ const Sidebar = () => {
                         size="sm"
                         onDropBlock={(activeId) =>
                           reorderSidebarItems(
-                            null,
+                            'group_design_team',
                             activeId,
                             'APPEND_GROUP',
                             BaseElement.Project,
