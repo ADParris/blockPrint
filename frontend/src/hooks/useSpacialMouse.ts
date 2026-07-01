@@ -4,18 +4,23 @@ import type { AnchorDirection, CanvasBlock } from '../state/types';
 import { createConnectionKey, useProjectStore } from '../state/useProjectStore';
 
 interface UseSpatialMouseProps {
+  projectId: string | undefined; // 🎯 Added project scope parameter
+  pageId: string | undefined; // 🎯 Added page scope parameter
   canvasRef: React.RefObject<HTMLDivElement | null>;
   blocks: CanvasBlock[];
 }
 
 export const useSpatialMouse = ({
+  projectId,
+  pageId,
   canvasRef,
   blocks,
 }: UseSpatialMouseProps) => {
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
-  const [connectingDirection, setConnectingDirection] = useState<string | null>(
-    null,
-  );
+
+  // 🎯 Type-hint state directly as AnchorDirection to resolve parsing errors downstream cleanly
+  const [connectingDirection, setConnectingDirection] =
+    useState<AnchorDirection | null>(null);
   const [mouseCanvasPos, setMouseCanvasPos] = useState({ x: 0, y: 0 });
 
   // 📸 Panning State
@@ -33,14 +38,13 @@ export const useSpatialMouse = ({
   const zoomScale = useProjectStore((state) => state.zoomScale ?? 1);
   const setCameraOffset = useProjectStore((state) => state.setCameraOffset);
   const setZoomScale = useProjectStore((state) => state.setZoomScale);
+
   const updateBlockPosition = useProjectStore(
     (state) => state.updateBlockPosition,
   );
-
   const addBlockConnectionByKey = useProjectStore(
     (state) => state.addBlockConnectionByKey,
   );
-  // 🎯 Need this to delete the old route when a user picks up an existing arrow tip!
   const removeBlockConnectionByKey = useProjectStore(
     (state) => state.removeBlockConnectionByKey,
   );
@@ -54,7 +58,7 @@ export const useSpatialMouse = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
 
-    // 🎯 FEATURE: Left-Click Reconnecting an Existing Arrow
+    // 🎯 Left-Click Reconnecting an Existing Arrow
     const arrowLine = target.closest('[data-connection-id]');
     if (e.button === 0 && arrowLine) {
       const connectionId = arrowLine.getAttribute('data-connection-id')!;
@@ -63,42 +67,38 @@ export const useSpatialMouse = ({
       if (parts.length >= 3) {
         e.stopPropagation();
 
-        const sourceId = parts[1]; // Clean source UUID
-        const targetId = parts[2]; // Clean target UUID
-
+        const sourceId = parts[1];
+        const targetId = parts[2];
         const sourceBlock = blocks.find((b) => b.id === sourceId);
 
         if (sourceBlock) {
-          // 🎯 FIX: Find the actual connection record to preserve its original anchor face direction!
           const existingConn = sourceBlock.connections?.find(
             (c) => c.targetId === targetId,
           );
-          const originalDirection = existingConn?.sourceDir || 'bottom'; // Fallback just in case
+          const originalDirection = existingConn?.sourceDir || 'bottom';
 
-          // 1. Lock the origin down to the original source block
           setConnectingFromId(sourceId);
-
-          // 2. 🎯 Use the authentic direction instead of a hardcoded 'top'
           setConnectingDirection(originalDirection);
 
-          // 3. Pin the live line target to the precise mouse position
           const rect = canvasRef.current!.getBoundingClientRect();
           setMouseCanvasPos({
             x: (e.clientX - rect.left - cameraOffset.x) / zoomScale,
             y: (e.clientY - rect.top - cameraOffset.y) / zoomScale,
           });
 
-          // 4. Sever the old connection record from the store
-          removeBlockConnectionByKey(connectionId);
+          // 🎯 Pass explicit routing keys to fulfill the new method signature
+          removeBlockConnectionByKey(projectId, pageId, connectionId);
           return;
         }
       }
     }
 
-    if (e.button === 2) return; // Maintain normal right-click flows for command menus
+    if (e.button === 2) return;
 
     const blockElement = target.closest('[data-canvas-block-id]');
-    const direction = target.getAttribute('data-anchor-dir');
+    const direction = target.getAttribute(
+      'data-anchor-dir',
+    ) as AnchorDirection | null;
 
     // Standard Anchor Pin connecting logic
     if (direction && blockElement) {
@@ -169,7 +169,9 @@ export const useSpatialMouse = ({
       const normalizedY =
         (e.clientY - cameraOffset.y) / zoomScale - dragOffset.y;
       const GRID_SIZE = 40;
-      updateBlockPosition(activeDragId, {
+
+      // 🎯 Pass explicit routing identifiers to update relative layout arrays
+      updateBlockPosition(projectId, pageId, activeDragId, {
         x: Math.round(normalizedX / GRID_SIZE) * GRID_SIZE,
         y: Math.round(normalizedY / GRID_SIZE) * GRID_SIZE,
       });
@@ -183,9 +185,8 @@ export const useSpatialMouse = ({
     if (connectingFromId) {
       const target = e.target as HTMLElement;
       const blockElement = target.closest('[data-canvas-block-id]');
-
-      // 🎯 Determine exactly which handle face the mouse dropped onto
-      const releasedAnchorDir = target.getAttribute('data-anchor-dir') || 'top'; // Safe fallback landing side
+      const releasedAnchorDir = (target.getAttribute('data-anchor-dir') ||
+        'top') as AnchorDirection;
 
       if (blockElement) {
         const targetBlockId = blockElement.getAttribute(
@@ -193,17 +194,18 @@ export const useSpatialMouse = ({
         )!;
 
         if (targetBlockId !== connectingFromId) {
-          // 🎯 FIX: Cast connectingDirection safely with a fallback to resolve the null error
-          const sourceDir = (connectingDirection || 'top') as AnchorDirection;
-          const targetDir = (releasedAnchorDir || 'top') as AnchorDirection;
+          const sourceDir = connectingDirection || 'top';
+          const targetDir = releasedAnchorDir;
 
           const connectionKey = createConnectionKey(
             connectingFromId,
             targetBlockId,
-            sourceDir, // 100% type-safe string now
-            targetDir, // 100% type-safe string now
+            sourceDir,
+            targetDir,
           );
-          addBlockConnectionByKey(connectionKey);
+
+          // 🎯 Pass explicit routing identifiers to add new persistent canvas arrows
+          addBlockConnectionByKey(projectId, pageId, connectionKey);
         }
       }
     }

@@ -1,7 +1,8 @@
+// src/components/Sidebar/SidebarProjectItem.tsx
 import React from 'react';
 import { LuFolder, LuPlus } from 'react-icons/lu';
-import { useNavigate } from 'react-router-dom';
-import { WorkspaceViewMode, type Page, type Project } from '../../state/types';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type { Page, Project } from '../../state/types';
 import { paths } from '../../utils/routes';
 import SortableList from '../SortableList';
 import { SidebarPageItem } from './SidebarPageItem';
@@ -11,7 +12,6 @@ interface SidebarProjectItemProps {
   targetNamespace: string;
   activeProjectId: string | null;
   activePageId: string | null;
-  activeViewMode: string;
   sortedPages: Page[];
   isMenuOpen: boolean;
   onCreatePageClick: (e: React.MouseEvent) => void;
@@ -27,7 +27,6 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
   targetNamespace,
   activeProjectId,
   activePageId,
-  activeViewMode,
   sortedPages,
   isMenuOpen,
   onCreatePageClick,
@@ -38,9 +37,12 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
   activeMenuType,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 🎯 Determine layout view mode directly from browser URL location path flags
   const isProjectActive = project.id === activeProjectId;
   const isDashboardActive =
-    isProjectActive && activeViewMode === WorkspaceViewMode.ProjectDashboard;
+    isProjectActive && location.pathname.endsWith('/dashboard');
 
   return (
     <div className="space-y-1">
@@ -108,8 +110,7 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
               }
               renderItem={(page, index) => {
                 const isPageActive =
-                  page.id === activePageId &&
-                  activeViewMode !== WorkspaceViewMode.ProjectDashboard;
+                  page.id === activePageId && !isDashboardActive;
                 const isPageMenuOpen =
                   activeMenuTargetId === page.id &&
                   activeMenuType === 'BLOCK_RECON_PAGE';
@@ -123,9 +124,12 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
                     isPageActive={isPageActive}
                     isMenuOpen={isPageMenuOpen}
                     onPageClick={() => {
-                      // 🎯 Fixed: Routes perfectly to specific document tabs under the correct namespace context
                       navigate(
-                        `/${targetNamespace}/projects/${project.id}/pages/${page.id}`,
+                        paths.pageDocument(
+                          targetNamespace,
+                          project.id,
+                          page.id,
+                        ),
                       );
                     }}
                     onMenuToggle={(e) => onPageMenuToggle(e, page.id)}

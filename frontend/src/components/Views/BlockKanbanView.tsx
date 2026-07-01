@@ -1,10 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import {
-  type CanvasBlock,
-  type ProgressState,
-  WorkspaceViewMode,
-} from '../../state/types';
+import { type CanvasBlock, type ProgressState } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 import Card from '../Card';
@@ -20,9 +16,6 @@ export const BlockKanbanView: React.FC = () => {
   const getPageBlocks = useProjectStore((state) => state.getPageBlocks);
   const moveBlockInKanban = useProjectStore((state) => state.moveBlockInKanban);
   const setActiveBlockId = useProjectStore((state) => state.setActiveBlockId);
-  const setWorkspaceViewMode = useProjectStore(
-    (state) => state.setWorkspaceViewMode,
-  );
   const navigate = useNavigate();
   const { namespace, projectId, pageId } = useParams<{
     namespace: string;
@@ -35,10 +28,8 @@ export const BlockKanbanView: React.FC = () => {
     e.stopPropagation();
     const origin = location.state?.from || 'roadmap';
     if (origin === 'roadmap') {
-      setWorkspaceViewMode(WorkspaceViewMode.PageKanban);
       navigate(paths.projectRoadmap(namespace || 'ADParris', projectId!));
     } else if (origin === 'document') {
-      setWorkspaceViewMode(WorkspaceViewMode.PageDocument);
       navigate(
         paths.pageDocument(namespace || 'ADParris', projectId!, pageId!),
       );
@@ -50,9 +41,19 @@ export const BlockKanbanView: React.FC = () => {
       title="Element Tracker"
       subtitle="Organize and monitor the implementation status of individual page blocks."
       columns={COLUMNS}
-      itemsByColumn={(columnId) => getPageBlocks(columnId as ProgressState)}
+      // 🎯 Pass explicit routing keys to query the correct canvas element list safely
+      itemsByColumn={(columnId) =>
+        getPageBlocks(projectId, pageId, columnId as ProgressState)
+      }
+      // 🎯 Pass explicit routing identifiers to safely modify layout arrays across columns
       onMoveItem={(blockId, targetColumnId, targetIndex) =>
-        moveBlockInKanban(blockId, targetColumnId, targetIndex)
+        moveBlockInKanban(
+          projectId,
+          pageId,
+          blockId,
+          targetColumnId,
+          targetIndex,
+        )
       }
       onBack={handleOnBackClick}
       renderCard={(block) => (

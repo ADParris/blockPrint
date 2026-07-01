@@ -1,16 +1,16 @@
 /* src/utils/routes.ts */
 export const paths = {
   projectDashboard: (namespace: string, projectId: string) =>
-    `/${namespace}/projects/${projectId}`,
+    `/${namespace}/projects/${projectId}/dashboard`,
 
   projectRoadmap: (namespace: string, projectId: string) =>
     `/${namespace}/projects/${projectId}/roadmap`,
 
-  pageRoadmap: (namespace: string, projectId: string, pageId: string) =>
-    `/${namespace}/projects/${projectId}/pages/${pageId}/roadmap`,
+  pageKanban: (namespace: string, projectId: string, pageId: string) =>
+    `/${namespace}/projects/${projectId}/pages/${pageId}/kanban`,
 
   pageDocument: (namespace: string, projectId: string, pageId: string) =>
-    `/${namespace}/projects/${projectId}/pages/${pageId}`,
+    `/${namespace}/projects/${projectId}/pages/${pageId}/document`,
 
   pageCanvas: (namespace: string, projectId: string, pageId: string) =>
     `/${namespace}/projects/${projectId}/pages/${pageId}/canvas`,

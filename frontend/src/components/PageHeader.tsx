@@ -1,20 +1,21 @@
 // src/components/Headers/PageHeader.tsx
 import { useEffect, useRef, useState } from 'react';
 import { useImageBlob } from '../hooks/useImageBlob';
-import type { Page } from '../state/types'; // 🎯 Updated from Notebook to Page
+import type { Page } from '../state/types';
 import { useProjectStore } from '../state/useProjectStore';
 import { ImageControls } from './ImageControls';
 import Loader from './Loader';
 
 interface PageHeaderProps {
-  page: Page; // 🎯 Renamed property
+  projectId: string; // 🎯 Explicit parent structural reference passed from parent router
+  page: Page;
 }
 
-function PageHeader({ page }: PageHeaderProps) {
-  // 🎯 Updated selector to pull the clean, multi-project action name
-  const { updatePageHeader, setImageCacheUrl } = useProjectStore(
-    (state) => state,
-  );
+function PageHeader({ projectId, page }: PageHeaderProps) {
+  // 🎯 Isolated Atomic Selectors to enforce stable re-renders
+  const updatePageHeader = useProjectStore((state) => state.updatePageHeader);
+  const setImageCacheUrl = useProjectStore((state) => state.setImageCacheUrl);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,8 +58,8 @@ function PageHeader({ page }: PageHeaderProps) {
       // 2. Write new binary file over old one in IndexedDB
       const success = await processFile(file);
       if (success) {
-        // 3. Force the state update
-        updatePageHeader(page.id, { coverImage: page.id });
+        // 3. Force the state update using our complete path scope
+        updatePageHeader(projectId, page.id, { coverImage: page.id });
       }
       e.target.value = '';
     }
@@ -92,7 +93,7 @@ function PageHeader({ page }: PageHeaderProps) {
             <button
               onClick={() => {
                 setIsUserAddingTitle(true);
-                updatePageHeader(page.id, { headerTitle: '' });
+                updatePageHeader(projectId, page.id, { headerTitle: '' });
               }}
               className="text-xs text-slate-400 hover:text-indigo-400 font-medium transition-colors cursor-pointer"
             >
@@ -131,13 +132,13 @@ function PageHeader({ page }: PageHeaderProps) {
           <ImageControls
             onRemove={() => {
               setImageCacheUrl(page.id, '');
-              updatePageHeader(page.id, { coverImage: undefined });
+              updatePageHeader(projectId, page.id, { coverImage: undefined });
             }}
             onSwap={async (file) => {
               setImageCacheUrl(page.id, '');
               const success = await processFile(file);
               if (success) {
-                updatePageHeader(page.id, { coverImage: page.id });
+                updatePageHeader(projectId, page.id, { coverImage: page.id });
               }
             }}
           />
@@ -152,7 +153,9 @@ function PageHeader({ page }: PageHeaderProps) {
           data-block-id="header-title"
           value={page.headerTitle}
           onChange={(e) =>
-            updatePageHeader(page.id, { headerTitle: e.target.value })
+            updatePageHeader(projectId, page.id, {
+              headerTitle: e.target.value,
+            })
           }
           onKeyDown={(e) => {
             if (e.key === 'Backspace') {
@@ -164,7 +167,7 @@ function PageHeader({ page }: PageHeaderProps) {
                 page.headerTitle.trim() === ''
               ) {
                 e.preventDefault();
-                updatePageHeader(page.id, {
+                updatePageHeader(projectId, page.id, {
                   headerTitle: 'Untitled Page',
                 });
               }
@@ -172,7 +175,7 @@ function PageHeader({ page }: PageHeaderProps) {
           }}
           onBlur={() => {
             if (!page.headerTitle || page.headerTitle.trim() === '') {
-              updatePageHeader(page.id, {
+              updatePageHeader(projectId, page.id, {
                 headerTitle: 'Untitled Page',
               });
             }

@@ -1,6 +1,6 @@
 // src/components/Canvases/GlobalCanvas.tsx
-import React, { useEffect, useRef } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import React, { useRef } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useCanvasKeyboard } from '../../hooks/useCanvasKeyboard';
 import {
   CommandMenus,
@@ -22,119 +22,62 @@ import { ProjectDashboardView } from './ProjectDashboardView';
 
 const GlobalView: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const location = useLocation();
 
-  // 🎯 1. Extract parameters straight from the browser URL address bar
+  // 1. Extract router configurations
   const { namespace, projectId, pageId } = useParams<{
     namespace: string;
     projectId?: string;
     pageId?: string;
   }>();
 
-  // Fetch store methods and operational states individually to ensure stable selector subscriptions
-  const projects = useProjectStore((state) => state.projects);
+  // 2. Fetch Store subscriptions
   const pages = useProjectStore((state) => state.pages);
   const activeBlockId = useProjectStore((state) => state.activeBlockId);
-  const activeViewMode = useProjectStore((state) => state.activeViewMode);
   const isLoading = useProjectStore((state) => state.isLoading);
   const setActiveBlockId = useProjectStore((state) => state.setActiveBlockId);
   const insertBlockAtIndex = useProjectStore(
     (state) => state.insertBlockAtIndex,
   );
-  const setActiveProjectId = useProjectStore(
-    (state) => state.setActiveProjectId,
-  );
-  const setActivePageId = useProjectStore((state) => state.setActivePageId);
 
   const { activeMenuId, position, openMenu, closeMenu } = useModalStore();
 
-  // 🎯 Keep Zustand synchronized AND intercept dead/deleted paths
-  useEffect(() => {
-    if (isLoading) return;
+  // 🎯 3. Derive view layouts deterministically from uniform trailing route targets
+  const isRoadmap = location.pathname.endsWith('/roadmap');
+  const isCanvas = location.pathname.endsWith('/canvas');
+  const isBlockKanban = location.pathname.endsWith('/kanban');
 
-    setActiveProjectId(projectId || null);
-    setActivePageId(pageId || null);
+  let resolvedViewMode: WorkspaceViewModeType =
+    WorkspaceViewMode.ProjectDashboard;
 
-    const currentViewMode = useProjectStore.getState().activeViewMode;
-    const isRoadmap = location.pathname.endsWith('/roadmap');
-    const isCanvas = location.pathname.endsWith('/canvas');
-
-    // 🎯 1. Handle Page-Level Context View Modes
-    if (pageId) {
-      if (isRoadmap) {
-        if (currentViewMode !== WorkspaceViewMode.PageKanban) {
-          useProjectStore.setState({
-            activeViewMode: WorkspaceViewMode.PageKanban,
-          });
-        }
-      } else if (isCanvas) {
-        if (currentViewMode !== WorkspaceViewMode.PageCanvas) {
-          useProjectStore.setState({
-            activeViewMode: WorkspaceViewMode.PageCanvas,
-          });
-        }
-      } else {
-        // 🎯 Cast the array as the broader WorkspaceViewModeType[] to satisfy .includes()
-        const validPageModes: WorkspaceViewModeType[] = [
-          WorkspaceViewMode.PageDocument,
-          WorkspaceViewMode.PageCanvas,
-        ];
-
-        if (!validPageModes.includes(currentViewMode)) {
-          useProjectStore.setState({
-            activeViewMode: WorkspaceViewMode.PageDocument,
-          });
-        }
-      }
+  if (pageId) {
+    if (isCanvas) {
+      resolvedViewMode = WorkspaceViewMode.PageCanvas;
+    } else if (isBlockKanban) {
+      resolvedViewMode = WorkspaceViewMode.PageKanban; // Utilizing existing Kanban types for blocks
+    } else {
+      resolvedViewMode = WorkspaceViewMode.PageDocument;
     }
-    // 🎯 2. Handle Project-Level Context View Modes (Runs ONLY if pageId is missing)
-    else if (projectId) {
-      if (isRoadmap) {
-        if (currentViewMode !== WorkspaceViewMode.PageKanban) {
-          useProjectStore.setState({
-            activeViewMode: WorkspaceViewMode.PageKanban,
-          });
-        }
-      } else {
-        if (currentViewMode !== WorkspaceViewMode.ProjectDashboard) {
-          useProjectStore.setState({
-            activeViewMode: WorkspaceViewMode.ProjectDashboard,
-          });
-        }
-      }
-    }
+  } else if (projectId && isRoadmap) {
+    resolvedViewMode = WorkspaceViewMode.PageKanban;
+  }
 
-    // 🛡️ ROUTER GUARD: Verify project exists
-    if (projectId) {
-      const projectExists = projects.some((p) => p.id === projectId);
-      if (!projectExists) {
-        console.warn(
-          'Viewing a deleted or invalid project. Redirecting to home...',
-        );
-        navigate(`/${namespace || 'ADParris'}`);
-      }
-    }
-  }, [
+  // 4. Invoke keyboard listener
+  const { handleKeyDown } = useCanvasKeyboard({
     projectId,
     pageId,
-    location.pathname,
-    projects,
-    isLoading,
-    namespace,
-    navigate,
-    setActiveProjectId,
-    setActivePageId,
-  ]);
+    isDocumentView: resolvedViewMode === WorkspaceViewMode.PageDocument,
+    isCanvasView: resolvedViewMode === WorkspaceViewMode.PageCanvas,
+  });
 
-  // 🎯 3. Safely resolve active page using the parameters read from the URL
+  // 5. Derived active page entity
   const activePage =
     projectId && pageId && pages[projectId]
       ? pages[projectId].find((p) => p.id === pageId)
       : null;
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (activeViewMode !== WorkspaceViewMode.PageDocument) {
+    if (resolvedViewMode !== WorkspaceViewMode.PageDocument) {
       return;
     }
 
@@ -148,7 +91,6 @@ const GlobalView: React.FC = () => {
           e.stopPropagation();
           setActiveBlockId(targetBlockId);
 
-          // dragHandle is guaranteed non-null here by the outer condition
           const rect = dragHandle.getBoundingClientRect();
           const top = rect.bottom + 4;
           const left = rect.left;
@@ -175,8 +117,12 @@ const GlobalView: React.FC = () => {
       return;
     }
 
-    // Only auto-insert text blocks clicking the canvas empty-space if we are explicitly on the Document view mode
-    if (activeViewMode === WorkspaceViewMode.PageDocument && activePage) {
+    if (
+      resolvedViewMode === WorkspaceViewMode.PageDocument &&
+      projectId &&
+      pageId &&
+      activePage
+    ) {
       const pElements =
         containerRef.current?.querySelectorAll('[data-block-id]');
       const lastBlock = pElements?.[pElements.length - 1];
@@ -190,7 +136,11 @@ const GlobalView: React.FC = () => {
       }
 
       if (isClickingBelowLastBlock) {
-        const newBlockId = insertBlockAtIndex(activePage.blocks.length);
+        const newBlockId = insertBlockAtIndex(
+          projectId,
+          pageId,
+          activePage.blocks.length,
+        );
         setActiveBlockId(newBlockId);
 
         setTimeout(() => {
@@ -206,7 +156,6 @@ const GlobalView: React.FC = () => {
     }
   };
 
-  const { handleKeyDown } = useCanvasKeyboard();
   const isArrowMenu = activeMenuId?.startsWith('connection-');
   const isValidMenu = activeMenuId
     ? Object.values(CommandMenus).includes(activeMenuId as CommandMenusType) ||
@@ -218,18 +167,20 @@ const GlobalView: React.FC = () => {
       case CommandMenus.ArrowCommand:
         return (
           <ArrowCommandMenu
+            projectId={projectId}
+            pageId={pageId}
             connectionId={position?.arrowConnectionId ?? ''}
             onClose={closeMenu}
           />
         );
       case CommandMenus.BlockCommand:
-        return <BlockCommandMenu />;
+        return <BlockCommandMenu projectId={projectId} pageId={pageId} />;
       default:
         return null;
     }
   };
 
-  // 🎯 4. The Router-Driven View Switch Engine
+  // 🎯 6. Render View Components matching clean router contexts
   const renderMainContent = () => {
     if (isLoading) {
       return (
@@ -241,7 +192,6 @@ const GlobalView: React.FC = () => {
       );
     }
 
-    // 🎯 1. Highest Priority: If there's a pageId in the URL, handle page-level routing
     if (pageId) {
       if (!activePage) {
         return (
@@ -251,44 +201,19 @@ const GlobalView: React.FC = () => {
         );
       }
 
-      // 🎯 Micro check: If we are looking at a page, and it explicitly ends with roadmap
-      if (location.pathname.endsWith('/roadmap')) {
-        return <BlockKanbanView />;
-      }
+      // 🎯 Match trailing router endpoints directly
+      if (isBlockKanban) return <BlockKanbanView />;
+      if (isCanvas) return <SpatialCanvas />;
 
-      // Standard page canvas views fallback
-      switch (activeViewMode) {
-        case WorkspaceViewMode.PageCanvas:
-          return <SpatialCanvas />;
-        case WorkspaceViewMode.PageDocument:
-        default:
-          return <DocumentCanvas />;
-      }
+      // Default / fallback component view
+      return <DocumentCanvas />;
     }
 
-    // 🎯 2. Secondary Priority: Project-level views (Runs ONLY if pageId is missing)
     if (projectId) {
-      // Macro check: It ends with /roadmap and we already know pageId doesn't exist
-      if (location.pathname.endsWith('/roadmap')) {
-        return <PageKanbanView />;
-      }
-
-      // Default fallback when looking strictly at the project root path
+      if (isRoadmap) return <PageKanbanView />;
       return <ProjectDashboardView />;
     }
 
-    // 🎯 2. Secondary Priority: If there's a projectId in the URL but no pageId, show the Roadmap or Dashboard
-    if (projectId) {
-      // 💡 If your sidebar's "Kanban" button sets view mode to PageKanban when no page is active,
-      // or if you want the project root view to be the overview roadmap:
-      if (activeViewMode === WorkspaceViewMode.PageKanban) {
-        return <PageKanbanView />;
-      }
-
-      return <ProjectDashboardView />;
-    }
-
-    // 🎯 3. Baseline Fallback: Root namespace handle baseline overview
     return (
       <div className="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-1">
         <p className="font-semibold text-slate-400">
@@ -309,7 +234,7 @@ const GlobalView: React.FC = () => {
 
       <div
         className={`flex-1 h-full custom-scrollbar ${
-          activeViewMode === WorkspaceViewMode.PageDocument
+          resolvedViewMode === WorkspaceViewMode.PageDocument
             ? 'overflow-y-auto'
             : 'overflow-hidden'
         }`}

@@ -8,89 +8,59 @@ import type {
   ProgressState,
   Project,
   StoreSlice,
-  WorkspaceViewModeType,
 } from './types';
 
-import { BaseAction, BaseElement, WorkspaceViewMode } from './types';
+import { BaseAction, BaseElement } from './types';
 
 export interface ProjectActions {
-  setActiveProjectId: (id: string | null) => void;
-  setActivePageId: (id: string | null) => void;
-  setWorkspaceView: (
-    viewMode: WorkspaceViewModeType,
-    pageId?: string | null,
-  ) => void; // 🎯 New Explicit Router Action
   addProject: (
     name: string,
     description?: string,
     groupId?: string | null,
-  ) => void;
-  addPage: (projectId: string, title: string) => void;
+  ) => string; // 💡 Returning new ID so callers can navigate to it natively
+  addPage: (projectId: string | undefined, title: string) => string; // 💡 Returning new ID for immediate routing
   updatePageStatus: (
-    projectId: string,
-    pageId: string,
+    projectId: string | undefined,
+    pageId: string | undefined,
     nextStatus: ProgressState,
   ) => void;
-  updatePageHeader: (pageId: string, updates: Partial<Page>) => void;
+  updatePageHeader: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    updates: Partial<Page>,
+  ) => void;
   addHistoryEntry: (
+    projectId: string | undefined,
     targetType: BaseElementType,
     targetName: string,
     actionType: BaseActionType,
     details?: string,
   ) => void;
-  addFeedPost: (content: string) => void;
+  addFeedPost: (projectId: string | undefined, content: string) => void;
   reorderSidebarItems: (
-    projectId: string | null, // null for top-level global project folders
+    projectId: string | undefined | null, // null for top-level global project folders
     activeIndex: string | number,
     overIndex: string | number,
     type: Omit<BaseElementType, 'Block'>,
   ) => void;
-  deleteProject: (projectId: string) => void;
-  deletePage: (projectId: string, pageId: string) => void;
+  deleteProject: (projectId: string | undefined) => void;
+  deletePage: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+  ) => void;
 }
 
 export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
-  setActiveProjectId: (id) => {
-    // 🎯 Clicking a project folder now drops them straight onto its Project Dashboard Feed
-    set({
-      activeProjectId: id,
-      activePageId: null,
-      activeViewMode: WorkspaceViewMode.ProjectDashboard,
-    });
-  },
-
-  setActivePageId: (id) => {
-    // 🎯 Clicking a specific page defaults back to standard Document canvas rendering
-    set({
-      activePageId: id,
-      activeViewMode: WorkspaceViewMode.PageDocument,
-    });
-  },
-
-  // 🎯 Centralized view-switching router action
-  setWorkspaceView: (viewMode, pageId = null) => {
-    set({
-      activeViewMode: viewMode,
-      activePageId:
-        viewMode === WorkspaceViewMode.ProjectDashboard ? null : pageId,
-    });
-  },
-
-  // 🎯 FIX inside projectSlice.ts
-  addProject: (
-    name: string,
-    description: string | undefined,
-    groupId: string | null = null,
-  ) => {
+  addProject: (name, description, groupId = null) => {
     const user = get().currentUser;
     const groups = get().groups;
+    const newProjectId = `proj_${Date.now()}`;
 
-    // 💡 Dynamically pull team members if assigned to a group, otherwise default to current user
     const teamMembers =
       groupId && groups[groupId] ? groups[groupId].memberIds : [user?.id || ''];
 
     const newProject: Project = {
-      id: `proj_${Date.now()}`,
+      id: newProjectId,
       name,
       description,
       headerTitle: undefined,
@@ -98,7 +68,7 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       createdAt: Date.now(),
       status: 'On Track',
       teamMembers,
-      groupId, // 🎯 FIX: Capture the passed groupId parameter perfectly!
+      groupId,
       isPublicShareable: false,
     };
 
@@ -107,12 +77,10 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       pages: { ...state.pages, [newProject.id]: [] },
       changeLog: { ...state.changeLog, [newProject.id]: [] },
       feedPosts: { ...state.feedPosts, [newProject.id]: [] },
-      activeProjectId: newProject.id,
-      activePageId: null,
-      activeViewMode: WorkspaceViewMode.ProjectDashboard,
     }));
 
     get().addHistoryEntry(
+      newProjectId,
       BaseElement.Project,
       name,
       BaseAction.Create,
@@ -120,12 +88,21 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
         ? `Project provisioned inside shared team workspace.`
         : `Initial layout workspace provisioned.`,
     );
+
+    return newProjectId;
   },
 
   addPage: (projectId, title) => {
+    // 🎯 Guard: If the router hasn't supplied a projectId yet, exit gracefully
+    if (!projectId) {
+      console.warn('Cannot add page: No active projectId provided.');
+      return '';
+    }
+
     const user = get().currentUser;
+    const newPageId = `page_${Date.now()}`;
     const newPage: Page = {
-      id: `page_${Date.now()}`,
+      id: newPageId,
       projectId,
       title,
       status: 'Pending',
@@ -157,12 +134,14 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
         ...state.changeLog,
         [projectId]: [newLog, ...(state.changeLog[projectId] || [])],
       },
-      activePageId: newPage.id,
-      activeViewMode: WorkspaceViewMode.PageDocument, // 🎯 Route immediately to the new page canvas
     }));
+
+    return newPageId;
   },
 
   updatePageStatus: (projectId, pageId, nextStatus) => {
+    if (!projectId || !pageId) return;
+
     const user = get().currentUser;
     const projectPages = get().pages[projectId] || [];
     const targetPage = projectPages.find((p) => p.id === pageId);
@@ -203,11 +182,13 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     }));
   },
 
-  updatePageHeader: (pageId, updates) => {
-    const { activeProjectId, pages } = get();
-    if (!activeProjectId || !pages[activeProjectId]) return;
+  updatePageHeader: (projectId, pageId, updates) => {
+    if (!projectId || !pageId) return;
 
-    const updatedPages = pages[activeProjectId].map((page) => {
+    const { pages } = get();
+    if (!pages[projectId]) return;
+
+    const updatedPages = pages[projectId].map((page) => {
       if (page.id !== pageId) return page;
 
       return {
@@ -221,13 +202,13 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       };
     });
 
-    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
+    set({ pages: { ...pages, [projectId]: updatedPages } });
   },
 
-  addHistoryEntry: (targetType, targetName, actionType, details) => {
-    const { activeProjectId, changeLog, currentUser } = get();
-    if (!activeProjectId) return;
+  addHistoryEntry: (projectId, targetType, targetName, actionType, details) => {
+    if (!projectId) return;
 
+    const { changeLog, currentUser } = get();
     const newEntry: HistoryEntry = {
       id: `log_${Date.now()}`,
       timestamp: Date.now(),
@@ -239,24 +220,22 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       details,
     };
 
-    const projectHistory = changeLog[activeProjectId] || [];
+    const projectHistory = changeLog[projectId] || [];
 
     set({
       changeLog: {
         ...changeLog,
-        [activeProjectId]: [newEntry, ...projectHistory],
+        [projectId]: [newEntry, ...projectHistory],
       },
     });
   },
 
-  // 🎯 Commits a new user note/announcement into the conversational array
-  addFeedPost: (content) => {
-    const { activeProjectId, feedPosts, currentUser } = get();
-    if (!activeProjectId) return;
-
+  addFeedPost: (projectId, content) => {
+    if (!projectId) return;
+    const { feedPosts, currentUser } = get();
     const newPost: FeedPost = {
       id: `post_${Date.now()}`,
-      projectId: activeProjectId,
+      projectId,
       userId: currentUser?.id || 'unknown',
       userName: currentUser?.name || 'Alex Developer',
       content,
@@ -264,15 +243,16 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       likes: [],
     };
 
-    const projectPosts = feedPosts[activeProjectId] || [];
+    const projectPosts = feedPosts[projectId] || [];
 
     set({
       feedPosts: {
         ...feedPosts,
-        [activeProjectId]: [newPost, ...projectPosts],
+        [projectId]: [newPost, ...projectPosts],
       },
     });
   },
+
   reorderSidebarItems: (projectId, activeIndex, overIndex, type) => {
     const { currentUser, userSortOrders, projects, pages } = get();
     const userId = currentUser?.id || 'default_user';
@@ -283,24 +263,18 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     };
 
     if (type === BaseElement.Project) {
-      // 1. Establish the pure baseline from your current projects state
       const baselineOrder = projects.map((p) => p.id);
-
-      // 2. Safely extract the existing order array from userSortOrders using the resolved userId
       const existingOrder = userSortOrders[userId]?.globalProjectsOrder;
       const currentOrder = existingOrder?.length
         ? [...existingOrder]
         : [...baselineOrder];
 
-      // 3. Make absolutely sure no newly created projects got left behind
       baselineOrder.forEach((id) => {
         if (!currentOrder.includes(id)) currentOrder.push(id);
       });
 
       const activeId = String(activeIndex);
       const overId = String(overIndex);
-
-      // 4. Strip the dragged item out and splice it back into its new position
       const updatedOrder = currentOrder.filter((id) => id !== activeId);
 
       if (overId === 'APPEND_PERSONAL') {
@@ -318,11 +292,10 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
         if (targetIndex !== -1) {
           updatedOrder.splice(targetIndex, 0, activeId);
         } else {
-          updatedOrder.push(activeId); // Safety fallback catch
+          updatedOrder.push(activeId);
         }
       }
 
-      // 5. Commit clean state back to the store
       set({
         userSortOrders: {
           ...userSortOrders,
@@ -335,16 +308,12 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       return;
     }
 
-    // ---------------------------------------------------------------------
-    // 3. Handle nested sub-page sorting (Keeps SortableList happy)
-    // ---------------------------------------------------------------------
     if (!projectId) return;
     const fallbackPages = (pages[projectId] || []).map((p) => p.id);
     const currentPagesOrder = [
       ...(userRoot.projectPagesOrder[projectId] || fallbackPages),
     ];
 
-    // Convert to numbers explicitly for array splicing safety
     const numActive = Number(activeIndex);
     const numOver = Number(overIndex);
 
@@ -371,10 +340,12 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       });
     }
   },
-  deleteProject: (projectId) => {
-    const { projects, pages, changeLog, feedPosts, activeProjectId } = get();
 
-    // 1. Evict structural dictionaries completely
+  deleteProject: (projectId) => {
+    if (!projectId) return;
+
+    const { projects, pages, changeLog, feedPosts } = get();
+
     const nextPages = { ...pages };
     delete nextPages[projectId];
 
@@ -384,44 +355,28 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     const nextFeeds = { ...feedPosts };
     delete nextFeeds[projectId];
 
-    // 2. Clear out of the core project tracking list
     const nextProjects = projects.filter((p) => p.id !== projectId);
-
-    // 3. Fallback routing redirect check if the user just killed the project they are looking at
-    const shouldRedirect = activeProjectId === projectId;
 
     set({
       projects: nextProjects,
       pages: nextPages,
       changeLog: nextLogs,
       feedPosts: nextFeeds,
-      activeProjectId: shouldRedirect ? null : activeProjectId,
-      activePageId: shouldRedirect ? null : get().activePageId,
-      activeViewMode: shouldRedirect
-        ? WorkspaceViewMode.ProjectDashboard
-        : get().activeViewMode,
     });
   },
 
   deletePage: (projectId, pageId) => {
-    const { pages, activePageId } = get(); // 🎯 Cleaned: removed activeProjectId
+    if (!projectId || !pageId) return;
+
+    const { pages } = get();
     const currentProjectPages = pages[projectId] || [];
-
-    // 1. Filter out the specific page object key
     const nextProjectPages = currentProjectPages.filter((p) => p.id !== pageId);
-
-    // 2. Redirect back out to the parent Project Dashboard if they deleted their active tab view
-    const shouldRedirect = activePageId === pageId;
 
     set({
       pages: {
         ...pages,
         [projectId]: nextProjectPages,
       },
-      activePageId: shouldRedirect ? null : activePageId,
-      activeViewMode: shouldRedirect
-        ? WorkspaceViewMode.ProjectDashboard
-        : get().activeViewMode,
     });
   },
 });

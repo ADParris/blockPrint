@@ -1,18 +1,29 @@
+// src/state/kanbanSlice.ts
 import { reorderKanbanItems } from '../utils/kanban';
 import type { CanvasBlock, Page, ProgressState, StoreSlice } from './types';
 
 export interface KanbanActions {
   // Project Level (Pages)
-  getProjectPages: (columnId: ProgressState) => Page[];
+  getProjectPages: (
+    projectId: string | undefined,
+    columnId: ProgressState,
+  ) => Page[];
   movePageInKanban: (
-    pageId: string,
+    projectId: string | undefined,
+    pageId: string | undefined,
     targetColumnId: ProgressState,
     targetIndex: number,
   ) => void;
 
   // Page Level (Blocks)
-  getPageBlocks: (columnId: ProgressState) => CanvasBlock[];
+  getPageBlocks: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    columnId: ProgressState,
+  ) => CanvasBlock[];
   moveBlockInKanban: (
+    projectId: string | undefined,
+    pageId: string | undefined,
     blockId: string,
     targetColumnId: ProgressState,
     targetIndex: number,
@@ -21,22 +32,22 @@ export interface KanbanActions {
 
 export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
   // --- PROJECT LEVEL QUANTUM ---
-  getProjectPages: (columnId) => {
-    const { activeProjectId, pages } = get();
-    if (!activeProjectId) return [];
+  getProjectPages: (projectId, columnId) => {
+    const { pages } = get();
+    if (!projectId) return [];
 
-    return (pages[activeProjectId] || [])
+    return (pages[projectId] || [])
       .filter((page) => (page.kanban?.columnId || 'Pending') === columnId)
       .sort(
         (a, b) => (a.kanban?.orderIndex || 0) - (b.kanban?.orderIndex || 0),
       );
   },
 
-  movePageInKanban: (pageId, targetColumnId, targetIndex) => {
-    const { activeProjectId, pages, currentUser } = get();
-    if (!activeProjectId) return;
+  movePageInKanban: (projectId, pageId, targetColumnId, targetIndex) => {
+    const { pages, currentUser } = get();
+    if (!projectId || !pageId) return;
 
-    const projectPages = pages[activeProjectId] || [];
+    const projectPages = pages[projectId] || [];
     const targetPage = projectPages.find((p) => p.id === pageId);
     if (!targetPage) return;
 
@@ -44,9 +55,8 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
     const pageTitle = targetPage.title || 'Untitled Page';
 
     set((state) => {
-      const currentList = state.pages[activeProjectId] || [];
+      const currentList = state.pages[projectId] || [];
 
-      // 🎯 Direct utility execution
       const finalPagesList = reorderKanbanItems({
         items: currentList,
         itemId: pageId,
@@ -69,26 +79,21 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
       };
 
       return {
-        pages: { ...state.pages, [activeProjectId]: finalPagesList },
+        pages: { ...state.pages, [projectId]: finalPagesList },
         changeLog: {
           ...state.changeLog,
-          [activeProjectId]: [
-            historyEntry,
-            ...(state.changeLog[activeProjectId] || []),
-          ],
+          [projectId]: [historyEntry, ...(state.changeLog[projectId] || [])],
         },
       };
     });
   },
 
   // --- PAGE LEVEL QUANTUM (New) ---
-  getPageBlocks: (columnId) => {
-    const { activeProjectId, activePageId, pages } = get();
-    if (!activeProjectId || !activePageId) return [];
+  getPageBlocks: (projectId, pageId, columnId) => {
+    const { pages } = get();
+    if (!projectId || !pageId) return [];
 
-    const currentPage = (pages[activeProjectId] || []).find(
-      (p) => p.id === activePageId,
-    );
+    const currentPage = (pages[projectId] || []).find((p) => p.id === pageId);
     if (!currentPage) return [];
 
     return (currentPage.blocks || [])
@@ -98,12 +103,18 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
       );
   },
 
-  moveBlockInKanban: (blockId, targetColumnId, targetIndex) => {
-    const { activeProjectId, activePageId, pages, currentUser } = get();
-    if (!activeProjectId || !activePageId) return;
+  moveBlockInKanban: (
+    projectId,
+    pageId,
+    blockId,
+    targetColumnId,
+    targetIndex,
+  ) => {
+    const { pages, currentUser } = get();
+    if (!projectId || !pageId) return;
 
-    const projectPages = pages[activeProjectId] || [];
-    const currentPage = projectPages.find((p) => p.id === activePageId);
+    const projectPages = pages[projectId] || [];
+    const currentPage = projectPages.find((p) => p.id === pageId);
     if (!currentPage) return;
 
     const targetBlock = currentPage.blocks.find((b) => b.id === blockId);
@@ -112,11 +123,10 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
     const oldColumnId = targetBlock.kanban?.columnId || 'Pending';
 
     set((state) => {
-      const currentPagesList = state.pages[activeProjectId] || [];
-      const pageToModify = currentPagesList.find((p) => p.id === activePageId);
+      const currentPagesList = state.pages[projectId] || [];
+      const pageToModify = currentPagesList.find((p) => p.id === pageId);
       if (!pageToModify) return {};
 
-      // 🎯 Run the exact same utility for blocks!
       const finalBlocksList = reorderKanbanItems({
         items: pageToModify.blocks,
         itemId: blockId,
@@ -125,7 +135,7 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
       });
 
       const updatedPagesList = currentPagesList.map((p) =>
-        p.id === activePageId ? { ...p, blocks: finalBlocksList } : p,
+        p.id === pageId ? { ...p, blocks: finalBlocksList } : p,
       );
 
       const historyEntry = {
@@ -143,13 +153,10 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
       };
 
       return {
-        pages: { ...state.pages, [activeProjectId]: updatedPagesList },
+        pages: { ...state.pages, [projectId]: updatedPagesList },
         changeLog: {
           ...state.changeLog,
-          [activeProjectId]: [
-            historyEntry,
-            ...(state.changeLog[activeProjectId] || []),
-          ],
+          [projectId]: [historyEntry, ...(state.changeLog[projectId] || [])],
         },
       };
     });

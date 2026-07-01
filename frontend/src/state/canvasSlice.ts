@@ -33,11 +33,21 @@ export interface CanvasSlice {
   ) => void;
   setZoomScale: (scale: number | ((prev: number) => number)) => void;
   updateBlockPosition: (
+    projectId: string | undefined,
+    pageId: string | undefined,
     blockId: string,
     position: { x: number; y: number },
   ) => void;
-  addBlockConnectionByKey: (connectionKey: string) => void;
-  removeBlockConnectionByKey: (connectionKey: string) => void;
+  addBlockConnectionByKey: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    connectionKey: string,
+  ) => void;
+  removeBlockConnectionByKey: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    connectionKey: string,
+  ) => void;
 }
 
 export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
@@ -56,12 +66,12 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
     set({ zoomScale: nextScale });
   },
 
-  updateBlockPosition: (blockId, position) => {
-    const { activeProjectId, activePageId, pages } = get();
-    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+  updateBlockPosition: (projectId, pageId, blockId, position) => {
+    const { pages } = get();
+    if (!projectId || !pageId || !pages[projectId]) return;
 
-    const updatedPages = pages[activeProjectId].map((page) => {
-      if (page.id !== activePageId) return page;
+    const updatedPages = pages[projectId].map((page) => {
+      if (page.id !== pageId) return page;
       return {
         ...page,
         blocks: page.blocks.map((block) => {
@@ -82,20 +92,19 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
       };
     });
 
-    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
+    set({ pages: { ...pages, [projectId]: updatedPages } });
   },
 
-  addBlockConnectionByKey: (connectionKey) => {
+  addBlockConnectionByKey: (projectId, pageId, connectionKey) => {
     const parsed = parseConnectionKey(connectionKey);
     if (!parsed) return;
 
-    // 🎯 FIX: Extracted targetDir cleanly out of the parsed key object
     const { sourceId, targetId, sourceDir, targetDir } = parsed;
-    const { activeProjectId, activePageId, pages } = get();
-    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+    const { pages } = get();
+    if (!projectId || !pageId || !pages[projectId]) return;
 
-    const updatedPages = pages[activeProjectId].map((page) => {
-      if (page.id !== activePageId) return page;
+    const updatedPages = pages[projectId].map((page) => {
+      if (page.id !== pageId) return page;
 
       return {
         ...page,
@@ -103,7 +112,6 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
           if (block.id !== sourceId) return block;
 
           const currentConnections = block.connections ?? [];
-          // 🎯 ENHANCEMENT: Duplication check now looks at both directions
           const exists = currentConnections.some(
             (c) =>
               c.targetId === targetId &&
@@ -128,20 +136,19 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
       };
     });
 
-    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
+    set({ pages: { ...pages, [projectId]: updatedPages } });
   },
 
-  removeBlockConnectionByKey: (connectionKey) => {
+  removeBlockConnectionByKey: (projectId, pageId, connectionKey) => {
     const parsed = parseConnectionKey(connectionKey);
     if (!parsed) return;
 
-    // 🎯 ENHANCEMENT: Destructure targetDir for explicit cleanup matching
     const { sourceId, targetId, sourceDir, targetDir } = parsed;
-    const { activeProjectId, activePageId, pages } = get();
-    if (!activeProjectId || !activePageId || !pages[activeProjectId]) return;
+    const { pages } = get();
+    if (!projectId || !pageId || !pages[projectId]) return;
 
-    const updatedPages = pages[activeProjectId].map((page) => {
-      if (page.id !== activePageId) return page;
+    const updatedPages = pages[projectId].map((page) => {
+      if (page.id !== pageId) return page;
 
       return {
         ...page,
@@ -169,6 +176,6 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
       };
     });
 
-    set({ pages: { ...pages, [activeProjectId]: updatedPages } });
+    set({ pages: { ...pages, [projectId]: updatedPages } });
   },
 });

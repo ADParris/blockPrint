@@ -17,15 +17,19 @@ function App() {
           element={<GlobalView />}
         />
         <Route
+          path="/:namespace/projects/:projectId/dashboard"
+          element={<GlobalView />}
+        />
+        <Route
           path="/:namespace/projects/:projectId/roadmap"
           element={<GlobalView />}
         />
         <Route
-          path="/:namespace/projects/:projectId/pages/:pageId"
+          path="/:namespace/projects/:projectId/pages/:pageId/document"
           element={<GlobalView />}
         />
         <Route
-          path="/:namespace/projects/:projectId/pages/:pageId/roadmap"
+          path="/:namespace/projects/:projectId/pages/:pageId/kanban"
           element={<GlobalView />}
         />
         <Route

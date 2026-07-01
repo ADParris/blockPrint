@@ -1,5 +1,6 @@
 // src/components/Canvases/SpatialCanvas.tsx
 import React, { useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { useSpatialMouse } from '../../../hooks/useSpacialMouse';
 import { WorkspaceViewMode } from '../../../state/types';
 import { useProjectStore } from '../../../state/useProjectStore';
@@ -9,19 +10,26 @@ import ConnectionLayer from './ConnectionLayer';
 const SpatialCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // 🎯 Resolve the current active page context from our store slices
-  const { activeProjectId, activePageId, pages } = useProjectStore(
-    (state) => state,
-  );
+  // 🎯 1. Read layout targets straight from the active browser address bar parameters
+  const { projectId, pageId } = useParams<{
+    projectId: string;
+    pageId: string;
+  }>();
 
+  // 🎯 2. Atomic Selector Subscriptions to enforce stable render performance
+  const pages = useProjectStore((state) => state.pages);
+
+  // 3. Resolve the matching active page context out of state memory
   const activePage =
-    activeProjectId && activePageId && pages[activeProjectId]
-      ? pages[activeProjectId].find((p) => p.id === activePageId)
+    projectId && pageId && pages[projectId]
+      ? pages[projectId].find((p) => p.id === pageId)
       : null;
 
   // 🔌 Attach our decoupled state machine hook safely!
   const { cameraOffset, zoomScale, bgFill, mouseState, mouseHandlers } =
     useSpatialMouse({
+      projectId,
+      pageId,
       canvasRef,
       blocks: activePage?.blocks ?? [],
     });

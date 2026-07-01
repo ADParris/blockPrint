@@ -6,8 +6,7 @@ import {
   LuLayers,
   LuSquareCheck,
 } from 'react-icons/lu';
-import { useNavigate, useParams } from 'react-router-dom';
-import { WorkspaceViewMode } from '../../state/types';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 
@@ -19,9 +18,9 @@ interface WorkspaceLog {
 }
 
 export const ProjectDashboardView: React.FC = () => {
-  // 🎯 Pull in actions for routing
-  const { projects, activeProjectId, pages, setWorkspaceViewMode } =
-    useProjectStore((state) => state);
+  // 🎯 Cleaned: setWorkspaceViewMode is completely gone. Pure reactive layout reading.
+  const projects = useProjectStore((state) => state.projects);
+  const pages = useProjectStore((state) => state.pages);
 
   const navigate = useNavigate();
   const { namespace, projectId } = useParams<{
@@ -29,9 +28,8 @@ export const ProjectDashboardView: React.FC = () => {
     projectId: string;
   }>();
 
-  // Find the active project instance details
-  const project = projects.find((p) => p.id === activeProjectId);
-  const projectPages = activeProjectId ? pages[activeProjectId] || [] : [];
+  const project = projects.find((p) => p.id === projectId);
+  const projectPages = projectId ? pages[projectId] || [] : [];
 
   const statusDotColors = {
     success: 'bg-emerald-500',
@@ -54,9 +52,8 @@ export const ProjectDashboardView: React.FC = () => {
     },
   ];
 
-  // 🎯 Clear the active page context and set workspace view mode to Kanban
+  // 🎯 Pure Router Navigation: No background state configuration side-effects
   const handleRouteToRoadmap = () => {
-    setWorkspaceViewMode(WorkspaceViewMode.PageKanban);
     navigate(paths.projectRoadmap(namespace || 'ADParris', projectId!));
   };
 
@@ -70,7 +67,7 @@ export const ProjectDashboardView: React.FC = () => {
 
   return (
     <div className="h-full w-full overflow-y-auto bg-[#0b0f19] text-slate-100 p-8 custom-scrollbar animate-fadeIn">
-      {/* Dashboard Header Header */}
+      {/* Dashboard Header */}
       <div className="border-b border-slate-800 pb-6 mb-8">
         <div className="flex items-center space-x-3 text-xs font-semibold tracking-wider text-blue-400 uppercase mb-2">
           <LuLayers className="w-4 h-4" />
@@ -87,7 +84,7 @@ export const ProjectDashboardView: React.FC = () => {
 
       {/* Main Two Column Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Columns (Spans 2 layout lanes) */}
+        {/* Left Columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Section: Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -105,7 +102,7 @@ export const ProjectDashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* 🎯 Updated interactive gateway card */}
+            {/* Interactive gateway card */}
             <div
               onClick={handleRouteToRoadmap}
               className="group relative bg-slate-900/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-slate-900/60 transition-all duration-200 rounded-xl p-5 flex flex-col justify-between cursor-pointer select-none min-h-25.5"
@@ -150,27 +147,32 @@ export const ProjectDashboardView: React.FC = () => {
             ) : (
               <div className="divide-y divide-slate-800/60">
                 {projectPages.map((page) => (
-                  <div
+                  <Link
                     key={page.id}
-                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                    to={paths.pageDocument(
+                      namespace || 'ADParris',
+                      projectId!,
+                      page.id,
+                    )}
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0 group transition-colors"
                   >
                     <div className="flex items-center space-x-3 truncate">
-                      <LuFileText className="w-4 h-4 text-slate-500 shrink-0" />
-                      <span className="text-sm font-medium text-slate-300 truncate hover:text-blue-400 cursor-pointer">
+                      <LuFileText className="w-4 h-4 text-slate-500 group-hover:text-blue-400 shrink-0 transition-colors" />
+                      <span className="text-sm font-medium text-slate-300 truncate group-hover:text-blue-400 transition-colors">
                         {page.title}
                       </span>
                     </div>
                     <span className="text-xs text-slate-600 whitespace-nowrap">
                       Document Block
                     </span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Column (Spans 1 layout lane) */}
+        {/* Right Column */}
         <div className="space-y-6">
           {/* Activity / Feed Stream Panel */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 h-full min-h-80">

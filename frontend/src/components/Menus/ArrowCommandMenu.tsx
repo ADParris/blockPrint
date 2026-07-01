@@ -3,11 +3,15 @@ import React from 'react';
 import { useProjectStore } from '../../state/useProjectStore';
 
 interface ArrowCommandMenuProps {
+  projectId: string | undefined; // 🎯 Added project context prop
+  pageId: string | undefined; // 🎯 Added page context prop
   connectionId: string;
   onClose: () => void;
 }
 
 const ArrowCommandMenu: React.FC<ArrowCommandMenuProps> = ({
+  projectId,
+  pageId,
   connectionId,
   onClose,
 }) => {
@@ -17,8 +21,8 @@ const ArrowCommandMenu: React.FC<ArrowCommandMenuProps> = ({
   );
 
   const handleDeleteConnection = () => {
-    // 🎯 ZERO PARSING HERE: Let the store handle the token string directly!
-    removeBlockConnectionByKey(connectionId);
+    // 🎯 Pass explicit routing keys to fulfill the new slice method signature
+    removeBlockConnectionByKey(projectId, pageId, connectionId);
     onClose();
   };
 

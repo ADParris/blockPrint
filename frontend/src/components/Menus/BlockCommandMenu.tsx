@@ -8,11 +8,19 @@ interface CommandItem {
   type: BlockType;
 }
 
-const BlockCommandMenu: React.FC = () => {
-  const { activeBlockId, deleteBlock, updateBlockType } = useProjectStore(
-    (state) => state,
-  );
-  const { closeMenu } = useModalStore((state) => state);
+interface BlockCommandMenuProps {
+  projectId: string | undefined;
+  pageId: string | undefined;
+}
+
+const BlockCommandMenu: React.FC<BlockCommandMenuProps> = ({
+  projectId,
+  pageId,
+}) => {
+  const deleteBlock = useProjectStore((state) => state.deleteBlock);
+  const updateBlockType = useProjectStore((state) => state.updateBlockType);
+  const activeBlockId = useProjectStore((state) => state.activeBlockId);
+  const closeMenu = useModalStore((state) => state.closeMenu);
 
   const commands: CommandItem[] = [
     { label: 'Heading 1', labelStyle: 'font-bold', type: 'h1' },
@@ -33,7 +41,7 @@ const BlockCommandMenu: React.FC = () => {
 
   const handleCommandSelect = (type: BlockType) => {
     if (activeBlockId) {
-      updateBlockType(activeBlockId, type);
+      updateBlockType(projectId, pageId, activeBlockId, type);
     }
 
     closeMenu();
@@ -41,7 +49,7 @@ const BlockCommandMenu: React.FC = () => {
 
   const handleDeleteSelect = () => {
     if (activeBlockId) {
-      deleteBlock(activeBlockId);
+      deleteBlock(projectId, pageId, activeBlockId);
     }
     closeMenu();
   };

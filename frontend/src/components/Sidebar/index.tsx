@@ -1,8 +1,10 @@
+// src/components/Sidebar/Sidebar.tsx
 import React, { useState } from 'react';
 import { LuUser, LuUsers } from 'react-icons/lu';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { BaseElement, type Project } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
+import { paths } from '../../utils/routes';
 import DropZone from '../DropZone';
 import Modal from '../Modal';
 import { SidebarLayoutToggle } from './SidebarLayoutToggle';
@@ -10,23 +12,28 @@ import { SidebarProjectItem } from './SidebarProjectItem';
 import SidebarSectionHeader from './SidebarSectionHeader';
 
 const Sidebar = () => {
-  const { namespace } = useParams<{ namespace: string }>();
+  // 🎯 1. Extract structural routing contexts directly from URL parameters
+  const { namespace, projectId, pageId } = useParams<{
+    namespace: string;
+    projectId?: string;
+    pageId?: string;
+  }>();
+  const navigate = useNavigate();
 
-  const {
-    projects,
-    pages,
-    groups,
-    activeProjectId,
-    activePageId,
-    activeViewMode,
-    currentUser,
-    userSortOrders,
-    addProject,
-    addPage,
-    reorderSidebarItems,
-    deleteProject,
-    deletePage,
-  } = useProjectStore((state) => state);
+  // 🎯 2. Atomic Selector Subscriptions to enforce stable rendering
+  const projects = useProjectStore((state) => state.projects);
+  const pages = useProjectStore((state) => state.pages);
+  const groups = useProjectStore((state) => state.groups);
+  const currentUser = useProjectStore((state) => state.currentUser);
+  const userSortOrders = useProjectStore((state) => state.userSortOrders);
+
+  const addProject = useProjectStore((state) => state.addProject);
+  const addPage = useProjectStore((state) => state.addPage);
+  const reorderSidebarItems = useProjectStore(
+    (state) => state.reorderSidebarItems,
+  );
+  const deleteProject = useProjectStore((state) => state.deleteProject);
+  const deletePage = useProjectStore((state) => state.deletePage);
 
   const [activeMenu, setActiveMenu] = useState<{
     targetId: string;
@@ -55,15 +62,29 @@ const Sidebar = () => {
     });
   };
 
+  // 🎯 3. Handle reactive routing natively when creating elements
   const handleCreateProject = (groupId: string | null = null) => {
     const name = prompt('Enter project name:');
-    if (name) addProject(name, '', groupId);
+    if (name) {
+      const newProjectId = addProject(name, '', groupId);
+      const targetNamespace = groupId
+        ? groups[groupId]?.slug || 'shared-space'
+        : currentUser?.name || 'ADParris';
+      navigate(paths.projectDashboard(targetNamespace, newProjectId));
+    }
   };
 
-  const handleCreatePage = (e: React.MouseEvent, projectId: string) => {
+  const handleCreatePage = (e: React.MouseEvent, targetProjectId: string) => {
     e.stopPropagation();
     const title = prompt('Enter page title:');
-    if (title) addPage(projectId, title);
+    if (title) {
+      const newPageId = addPage(targetProjectId, title);
+      const project = projects.find((p) => p.id === targetProjectId);
+      const targetNamespace = project?.groupId
+        ? groups[project.groupId]?.slug || 'shared-space'
+        : currentUser?.name || 'ADParris';
+      navigate(paths.pageDocument(targetNamespace, targetProjectId, newPageId));
+    }
   };
 
   const handleDeleteItem = () => {
@@ -74,12 +95,18 @@ const Sidebar = () => {
     );
 
     if (confirmed) {
+      const targetNamespace = namespace || currentUser?.name || 'ADParris';
       if (type === BaseElement.Project) {
         deleteProject(targetId);
+        if (projectId === targetId) navigate(`/${targetNamespace}`);
       } else {
-        const projectContextId = activeProjectId || '';
+        const projectContextId = projectId || '';
         if (projectContextId) {
           deletePage(projectContextId, targetId);
+          if (pageId === targetId)
+            navigate(
+              `/${targetNamespace}/projects/${projectContextId}/dashboard`,
+            );
         }
       }
     }
@@ -154,9 +181,8 @@ const Sidebar = () => {
                       <SidebarProjectItem
                         project={project}
                         targetNamespace={currentUser?.name || 'ADParris'}
-                        activeProjectId={activeProjectId}
-                        activePageId={activePageId}
-                        activeViewMode={activeViewMode}
+                        activeProjectId={projectId || null}
+                        activePageId={pageId || null}
                         sortedPages={sortedPages}
                         isMenuOpen={
                           activeMenu?.targetId === project.id &&
@@ -168,8 +194,8 @@ const Sidebar = () => {
                         onMenuToggle={(e) =>
                           handleMenuClick(e, project.id, BaseElement.Project)
                         }
-                        onPageMenuToggle={(e, pageId) =>
-                          handleMenuClick(e, pageId, BaseElement.Page)
+                        onPageMenuToggle={(e, targetPageId) =>
+                          handleMenuClick(e, targetPageId, 'BLOCK_RECON_PAGE')
                         }
                         onReorderPages={(activeIndex, overIndex) =>
                           reorderSidebarItems(
@@ -186,7 +212,6 @@ const Sidebar = () => {
                   );
                 })}
 
-                {/* 🎯 Clean Trailing DropZone at the absolute bottom of the list */}
                 <DropZone
                   index={personalProjects.length}
                   size="sm"
@@ -251,9 +276,8 @@ const Sidebar = () => {
                       key={project.id}
                       project={project}
                       targetNamespace={projectNamespace}
-                      activeProjectId={activeProjectId}
-                      activePageId={activePageId}
-                      activeViewMode={activeViewMode}
+                      activeProjectId={projectId || null}
+                      activePageId={pageId || null}
                       sortedPages={sortedPages}
                       isMenuOpen={
                         activeMenu?.targetId === project.id &&
@@ -263,8 +287,8 @@ const Sidebar = () => {
                       onMenuToggle={(e) =>
                         handleMenuClick(e, project.id, BaseElement.Project)
                       }
-                      onPageMenuToggle={(e, pageId) =>
-                        handleMenuClick(e, pageId, BaseElement.Page)
+                      onPageMenuToggle={(e, targetPageId) =>
+                        handleMenuClick(e, targetPageId, 'BLOCK_RECON_PAGE')
                       }
                       onReorderPages={(activeIndex, overIndex) =>
                         reorderSidebarItems(

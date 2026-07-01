@@ -1,27 +1,34 @@
 // src/components/Canvases/DocumentCanvas.tsx
+import React from 'react';
+import { useParams } from 'react-router-dom';
 import { useProjectStore } from '../../state/useProjectStore';
 import BlockRenderer from '../BlockRenderer';
 import PageHeader from '../PageHeader';
 import SortableList from '../SortableList';
 
 const DocumentCanvas: React.FC = () => {
-  const {
-    activeProjectId,
-    activePageId,
-    pages,
-    moveBlockToIndex,
-    setActiveBlockId,
-    updateBlockContent,
-  } = useProjectStore((state) => state);
+  // 🎯 1. Extract context directly from URL parameter strings
+  const { projectId, pageId } = useParams<{
+    projectId: string;
+    pageId: string;
+  }>();
 
-  // 1. Resolve the active page reference out of the nested storage
+  // 🎯 2. Atomic Selector Subscriptions (Prevents unnecessary re-renders)
+  const pages = useProjectStore((state) => state.pages);
+  const moveBlockToIndex = useProjectStore((state) => state.moveBlockToIndex);
+  const setActiveBlockId = useProjectStore((state) => state.setActiveBlockId);
+  const updateBlockContent = useProjectStore(
+    (state) => state.updateBlockContent,
+  );
+
+  // 3. Resolve the active page reference cleanly out of storage
   const activePage =
-    activeProjectId && activePageId && pages[activeProjectId]
-      ? pages[activeProjectId].find((p) => p.id === activePageId)
+    projectId && pageId && pages[projectId]
+      ? pages[projectId].find((p) => p.id === pageId)
       : null;
 
-  // 2. 🛡️ The Guard Gate! Safe structural fallback if no page is active.
-  if (!activePage) {
+  // 4. Guard Gate! Safe structural fallback if no page matches the route path
+  if (!projectId || !pageId || !activePage) {
     return (
       <div className="flex h-full items-center justify-center text-slate-400">
         <div className="text-center">
@@ -47,7 +54,8 @@ const DocumentCanvas: React.FC = () => {
     const text = target.value;
 
     if (blockId) {
-      updateBlockContent(blockId, text);
+      // 🎯 Pass explicit context downstream to the decoupled action
+      updateBlockContent(projectId, pageId, blockId, text);
     }
   };
 
@@ -58,13 +66,21 @@ const DocumentCanvas: React.FC = () => {
         onBlur={handleContentChange}
         onFocus={handleFocus}
       >
-        {/* 🎯 Re-routing data context downward to the layout sub-headers */}
-        <PageHeader page={activePage} />
+        <PageHeader projectId={projectId} page={activePage} />
 
         <SortableList
           items={activePage.blocks}
-          onMoveItem={moveBlockToIndex}
-          renderItem={(block) => <BlockRenderer block={block} />}
+          // 🎯 Currying the project and page IDs straight into our reorder action
+          onMoveItem={(activeId, targetIndex) =>
+            moveBlockToIndex(projectId, pageId, activeId, targetIndex)
+          }
+          renderItem={(block) => (
+            <BlockRenderer
+              projectId={projectId}
+              pageId={pageId}
+              block={block}
+            />
+          )}
         />
         <div className="h-[40vh]" />
       </div>

@@ -1,57 +1,59 @@
-// src/components/SidebarLayoutToggle.tsx
+// src/components/Sidebar/SidebarLayoutToggle.tsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { WorkspaceViewMode } from '../../state/types';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 
 export const SidebarLayoutToggle: React.FC = () => {
-  // 🎯 Fix: Select properties individually to prevent object reference recreation loops
-  const activeProjectId = useProjectStore((state) => state.activeProjectId);
-  const activePageId = useProjectStore((state) => state.activePageId);
-  const namespace = useProjectStore(
-    (state) => state.groups?.group_design_team?.slug || 'ADParris',
-  );
-  const pages = useProjectStore((state) => state.pages);
-  const activeViewMode = useProjectStore((state) => state.activeViewMode);
-  const setWorkspaceViewMode = useProjectStore(
-    (state) => state.setWorkspaceViewMode,
-  );
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Safely grab the currently active page object
+  // 🎯 1. Read layout targets straight from the active browser address bar parameters
+  const { namespace, projectId, pageId } = useParams<{
+    namespace: string;
+    projectId?: string;
+    pageId?: string;
+  }>();
+
+  // 🎯 2. Atomic Selector Subscriptions to enforce stable render performance
+  const pages = useProjectStore((state) => state.pages);
+  const currentUser = useProjectStore((state) => state.currentUser);
+
+  // 3. Resolve if a page layout is actively selected using the current path parameters
   const activePage =
-    activeProjectId && activePageId && pages[activeProjectId]
-      ? pages[activeProjectId].find((p) => p.id === activePageId)
+    projectId && pageId && pages[projectId]
+      ? pages[projectId].find((p) => p.id === pageId)
       : null;
+
+  // If there's no active page selection context in the URL, keep the view controller hidden
+  if (!activePage || !projectId || !pageId) return null;
+
+  const targetNamespace = namespace || currentUser?.name || 'ADParris';
+
+  // 🎯 4. Check the end of the pathname to dynamically highlight the active toggle mode
+  const currentPath = location.pathname;
+  const isCanvas =
+    currentPath.endsWith(`/pages/${pageId}`) || currentPath.endsWith('/canvas');
+  const isKanban =
+    currentPath.endsWith('/roadmap') || currentPath.endsWith('/kanban');
+  const isDocument = !isCanvas && !isKanban; // Fallback to default Document node view
 
   const handleDocumentClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setWorkspaceViewMode(WorkspaceViewMode.PageDocument);
-    navigate(paths.pageDocument(namespace, activeProjectId!, activePageId!));
+    navigate(paths.pageDocument(targetNamespace, projectId, pageId));
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setWorkspaceViewMode(WorkspaceViewMode.PageCanvas);
-    navigate(paths.pageCanvas(namespace, activeProjectId!, activePageId!));
+    navigate(paths.pageCanvas(targetNamespace, projectId, pageId));
   };
 
   const handleKanbanClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-
-    if (!activeProjectId || !activePageId) {
-      console.warn('Missing project or page context in store!');
-      return;
-    }
-    setWorkspaceViewMode(WorkspaceViewMode.PageKanban);
-    navigate(paths.pageRoadmap(namespace, activeProjectId, activePageId), {
-      state: { from: 'document' }, // Stamp it so the back button knows we came from the editor!
+    navigate(paths.pageKanban(targetNamespace, projectId, pageId), {
+      state: { from: 'document' },
     });
   };
-
-  // If there's no active page selection, keep the view controller hidden
-  if (!activePage) return null;
 
   return (
     <div className="mt-auto p-4 border-t border-slate-800 bg-[#0b0f19]">
@@ -63,7 +65,7 @@ export const SidebarLayoutToggle: React.FC = () => {
         <button
           onClick={handleDocumentClick}
           className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-            activeViewMode === WorkspaceViewMode.PageDocument
+            isDocument
               ? 'bg-blue-600 text-white shadow-md'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
@@ -75,7 +77,7 @@ export const SidebarLayoutToggle: React.FC = () => {
         <button
           onClick={handleCanvasClick}
           className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-            activeViewMode === WorkspaceViewMode.PageCanvas
+            isCanvas
               ? 'bg-blue-600 text-white shadow-md'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
@@ -87,7 +89,7 @@ export const SidebarLayoutToggle: React.FC = () => {
         <button
           onClick={handleKanbanClick}
           className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-            activeViewMode === WorkspaceViewMode.PageKanban
+            isKanban
               ? 'bg-blue-600 text-white shadow-md'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}

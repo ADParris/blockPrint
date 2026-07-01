@@ -1,16 +1,16 @@
+// src/hooks/useDocumentKeyboard.ts
 import type { KeyboardEvent } from 'react';
-import { WorkspaceViewMode } from '../state/types';
 import { useModalStore } from '../state/useModalStore';
 import { useProjectStore } from '../state/useProjectStore';
 
-export const useDocumentKeyboard = () => {
-  // 1. Grab modern active collections and parameters from the central store
-  const activeProjectId = useProjectStore((state) => state.activeProjectId);
-  const activePageId = useProjectStore((state) => state.activePageId);
+// 🎯 Accept the active context parameters directly as arguments
+export const useDocumentKeyboard = (
+  projectId: string | undefined,
+  pageId: string | undefined,
+  isDocumentView: boolean,
+) => {
+  // 🎯 1. Clean, atomic selector subscriptions
   const pages = useProjectStore((state) => state.pages);
-  const activeViewMode = useProjectStore((state) => state.activeViewMode);
-
-  // Core modification actions
   const updateBlockContent = useProjectStore(
     (state) => state.updateBlockContent,
   );
@@ -25,13 +25,13 @@ export const useDocumentKeyboard = () => {
   const closeMenu = useModalStore((state) => state.closeMenu);
 
   return (e: KeyboardEvent<HTMLElement>): boolean => {
-    // 2. Resolve the active page object safely at the runtime execution frame
-    const projectPages = pages[activeProjectId || ''] || [];
-    const currentPage = projectPages.find((page) => page.id === activePageId);
-    const blocks = currentPage?.blocks || [];
+    // 🎯 2. Guard against out-of-bounds layout views instantly using the passed flag
+    if (!isDocumentView || !projectId || !pageId) return false;
 
-    // 🎯 3. Guard against the global active view mode instead of the stale property
-    if (activeViewMode !== WorkspaceViewMode.PageDocument) return false;
+    // Resolve the current block array safely using our parameters
+    const projectPages = pages[projectId] || [];
+    const currentPage = projectPages.find((page) => page.id === pageId);
+    const blocks = currentPage?.blocks || [];
 
     const target = e.target as HTMLTextAreaElement;
     const blockId = target.getAttribute('data-block-id');
@@ -53,11 +53,16 @@ export const useDocumentKeyboard = () => {
       const leftText = currentText.substring(0, cursorPosition);
       const rightText = currentText.substring(cursorPosition);
 
-      updateBlockContent(blockId, leftText);
+      updateBlockContent(projectId, pageId, blockId, leftText);
       const currentBlockIndex = blocks.findIndex(
         (block) => block.id === blockId,
       );
-      const newBlockId = insertBlockAtIndex(currentBlockIndex + 1, rightText);
+      const newBlockId = insertBlockAtIndex(
+        projectId,
+        pageId,
+        currentBlockIndex + 1,
+        rightText,
+      );
 
       setTimeout(() => {
         const nextTextarea = document.querySelector(
@@ -140,8 +145,13 @@ export const useDocumentKeyboard = () => {
           const mergedContent =
             (previousBlock.content || '') + currentBlockContent;
 
-          updateBlockContent(previousBlock.id, mergedContent);
-          deleteBlock(blockId);
+          updateBlockContent(
+            projectId,
+            pageId,
+            previousBlock.id,
+            mergedContent,
+          );
+          deleteBlock(projectId, pageId, blockId);
           setActiveBlockId(previousBlock.id);
 
           setTimeout(() => {
@@ -159,7 +169,7 @@ export const useDocumentKeyboard = () => {
           return true;
         } else {
           if (target.value === '') {
-            deleteBlock(blockId);
+            deleteBlock(projectId, pageId, blockId);
             setActiveBlockId('');
             return true;
           }

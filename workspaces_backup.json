@@ -41,18 +41,6 @@
         "isPublicShareable": false
       },
       {
-        "id": "proj_1782783130192",
-        "name": "Project 3",
-        "description": "",
-        "createdAt": 1782783130192,
-        "status": "On Track",
-        "teamMembers": [
-          "u1"
-        ],
-        "groupId": null,
-        "isPublicShareable": false
-      },
-      {
         "id": "proj_1782783196309",
         "name": "Project Gemini!",
         "description": "",
@@ -64,6 +52,30 @@
           "u3"
         ],
         "groupId": "group_design_team",
+        "isPublicShareable": false
+      },
+      {
+        "id": "proj_1782864621001",
+        "name": "Project 3",
+        "description": "",
+        "createdAt": 1782864621001,
+        "status": "On Track",
+        "teamMembers": [
+          "u1"
+        ],
+        "groupId": null,
+        "isPublicShareable": false
+      },
+      {
+        "id": "proj_1782864921395",
+        "name": "Project 4",
+        "description": "",
+        "createdAt": 1782864921395,
+        "status": "On Track",
+        "teamMembers": [
+          "u1"
+        ],
+        "groupId": null,
         "isPublicShareable": false
       }
     ],
@@ -77,7 +89,7 @@
           "lastEditedBy": {
             "userId": "u1",
             "userName": "ADParris",
-            "timestamp": 1782785367885
+            "timestamp": 1782861566946
           },
           "blocks": [
             {
@@ -99,7 +111,11 @@
                   "sourceDir": "top",
                   "targetDir": "top"
                 }
-              ]
+              ],
+              "kanban": {
+                "columnId": "InProgress",
+                "orderIndex": 0
+              }
             },
             {
               "id": "67457c74-f546-4be1-b49c-10cda9298c8b",
@@ -120,7 +136,11 @@
                   "sourceDir": "right",
                   "targetDir": "right"
                 }
-              ]
+              ],
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 0
+              }
             },
             {
               "id": "e793b548-1b09-4f0c-a124-c23168be743e",
@@ -141,7 +161,11 @@
                   "sourceDir": "bottom",
                   "targetDir": "bottom"
                 }
-              ]
+              ],
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 1
+              }
             },
             {
               "id": "ee298c29-6b69-42c5-a5f3-c68f406c79e7",
@@ -154,15 +178,19 @@
               "connections": [
                 {
                   "targetId": "117689a4-b2be-4a86-922e-2bf3b8d03812",
-                  "sourceDir": "top",
-                  "targetDir": "bottom"
+                  "sourceDir": "left",
+                  "targetDir": "left"
                 },
                 {
                   "targetId": "117689a4-b2be-4a86-922e-2bf3b8d03812",
-                  "sourceDir": "left",
-                  "targetDir": "left"
+                  "sourceDir": "top",
+                  "targetDir": "bottom"
                 }
-              ]
+              ],
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 2
+              }
             }
           ],
           "kanban": {
@@ -180,7 +208,11 @@
             "userName": "ADParris",
             "timestamp": 1782783169318
           },
-          "blocks": []
+          "blocks": [],
+          "kanban": {
+            "columnId": "Pending",
+            "orderIndex": 0
+          }
         }
       ],
       "proj_1782693627719": [
@@ -194,33 +226,84 @@
             "userName": "ADParris",
             "timestamp": 1782693694892
           },
-          "blocks": []
-        },
+          "blocks": [],
+          "kanban": {
+            "columnId": "Pending",
+            "orderIndex": 0
+          }
+        }
+      ],
+      "proj_1782693751125": [],
+      "proj_1782783196309": [],
+      "proj_1782864621001": [],
+      "proj_1782864921395": [
         {
-          "id": "page_1782693703245",
-          "projectId": "proj_1782693627719",
-          "title": "Page 2",
+          "id": "page_1782864932126",
+          "projectId": "proj_1782864921395",
+          "title": "Test Page",
           "status": "Pending",
           "lastEditedBy": {
             "userId": "u1",
             "userName": "ADParris",
-            "timestamp": 1782693703245
+            "timestamp": 1782867736340
           },
-          "blocks": []
+          "blocks": [
+            {
+              "id": "3f9e5fe2-dadb-450a-82c0-fcb53fb8ee85",
+              "type": "p",
+              "content": "12",
+              "position": {
+                "x": 120,
+                "y": 120
+              },
+              "kanban": {
+                "columnId": "InProgress",
+                "orderIndex": 0
+              }
+            },
+            {
+              "id": "33307a8c-7f27-43e8-9c6f-23ff374d29f0",
+              "type": "image",
+              "content": "33307a8c-7f27-43e8-9c6f-23ff374d29f0",
+              "position": {
+                "x": 120,
+                "y": 360
+              },
+              "connections": [
+                {
+                  "targetId": "3f9e5fe2-dadb-450a-82c0-fcb53fb8ee85",
+                  "sourceDir": "top",
+                  "targetDir": "bottom"
+                }
+              ],
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 0
+              }
+            },
+            {
+              "id": "88242605-42c2-4517-99b2-58b77b453721",
+              "type": "code",
+              "content": "// src/App.tsx\nimport { Navigate, Route, Routes } from 'react-router-dom';\nimport GlobalView from './components/Views/GlobalView';\n\nfunction App() {\n  return (\n    <>\n      {/* 🎯 Define the routing map right here */}\n      <Routes>\n        {/* Default landing: redirect straight to your personal workspace */}\n        <Route path=\"/\" element={<Navigate to=\"/ADParris\" replace />} />\n\n        {/* This route catches namespaces, project IDs, AND page IDs all under one roof */}\n        <Route path=\"/:namespace\" element={<GlobalView />} />\n        <Route\n          path=\"/:namespace/projects/:projectId\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/dashboard\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/roadmap\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/document\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/kanban\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/canvas\"\n          element={<GlobalView />}\n        />\n\n        {/* Catch-all fallback */}\n        <Route\n          path=\"*\"\n          element={\n            <div className=\"flex items-center justify-center h-full text-slate-500 text-xs\">\n              Route not found.\n            </div>\n          }\n        />\n      </Routes>\n    </>\n  );\n}\n\nexport default App;\n"
+            }
+          ],
+          "coverImage": "page_1782864932126",
+          "headerTitle": "Test",
+          "kanban": {
+            "columnId": "Pending",
+            "orderIndex": 0
+          }
         }
-      ],
-      "proj_1782693751125": [],
-      "proj_1782783130192": [],
-      "proj_1782783196309": []
+      ]
     },
     "userSortOrders": {
       "u1": {
         "globalProjectsOrder": [
           "proj_1782688016652",
+          "proj_1782783196309",
           "proj_1782693627719",
           "proj_1782693751125",
-          "proj_1782783130192",
-          "proj_1782783196309"
+          "proj_1782783130192"
         ],
         "projectPagesOrder": {
           "proj_1782693627719": [

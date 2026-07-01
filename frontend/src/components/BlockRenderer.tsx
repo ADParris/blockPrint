@@ -5,10 +5,12 @@ import { useProjectStore } from '../state/useProjectStore';
 import ImageBlock from './ImageBlock';
 
 interface BlockProps {
+  projectId: string;
+  pageId: string;
   block: CanvasBlock;
 }
 
-const BlockRenderer: React.FC<BlockProps> = ({ block }) => {
+const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
   const updateBlockContent = useProjectStore(
     (state) => state.updateBlockContent,
   );
@@ -40,6 +42,11 @@ const BlockRenderer: React.FC<BlockProps> = ({ block }) => {
     e.dataTransfer.effectAllowed = 'move';
   };
 
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    updateBlockContent(projectId, pageId, block.id, value);
+  };
+
   let elementToRender: React.ReactNode;
 
   if (block.type === 'code') {
@@ -48,7 +55,7 @@ const BlockRenderer: React.FC<BlockProps> = ({ block }) => {
         <textarea
           defaultValue={block.content}
           data-block-id={block.id}
-          onChange={(e) => updateBlockContent(block.id, e.target.value)}
+          onChange={handleTextareaChange}
           onBlur={() => setIsEditing(false)}
           className="w-full field-sizing-content min-h-32 max-h-128 p-4 bg-[#1e1e1e] font-mono text-sm text-slate-100 rounded-lg border border-slate-800 outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 resize-none whitespace-pre-wrap"
           placeholder="// Type your code here..."
@@ -87,7 +94,9 @@ const BlockRenderer: React.FC<BlockProps> = ({ block }) => {
       <ImageBlock
         blockId={block.id}
         content={block.content}
-        onContentChange={updateBlockContent}
+        onContentChange={(newContent) =>
+          updateBlockContent(projectId, pageId, block.id, newContent)
+        }
       />
     );
   } else {
@@ -102,7 +111,7 @@ const BlockRenderer: React.FC<BlockProps> = ({ block }) => {
       <textarea
         value={block.content}
         data-block-id={block.id}
-        onChange={(e) => updateBlockContent(block.id, e.target.value)}
+        onChange={handleTextareaChange}
         placeholder={
           block.type === 'h1'
             ? 'Heading 1'

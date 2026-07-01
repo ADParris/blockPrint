@@ -1,17 +1,19 @@
+// src/hooks/useSpatialKeyboard.ts
 import type { KeyboardEvent } from 'react';
-import { WorkspaceViewMode } from '../state/types';
 import { useProjectStore } from '../state/useProjectStore';
 
-export const useSpatialKeyboard = () => {
-  // 🎯 Select your true, centralized workspace view mode from the store slice
-  const activeViewMode = useProjectStore((state) => state.activeViewMode);
+interface SpatialKeyboardArgs {
+  isCanvasView: boolean;
+}
+
+export const useSpatialKeyboard = ({ isCanvasView }: SpatialKeyboardArgs) => {
   const zoomScale = useProjectStore((state) => state.zoomScale ?? 1);
   const setCameraOffset = useProjectStore((state) => state.setCameraOffset);
   const setZoomScale = useProjectStore((state) => state.setZoomScale);
 
   return (e: KeyboardEvent<HTMLElement>): boolean => {
-    // 🎯 Guard directly against the global active view mode
-    if (activeViewMode !== WorkspaceViewMode.PageCanvas) return false;
+    // 🎯 Guard cleanly using the view state flag passed down from the route layout boundary
+    if (!isCanvasView) return false;
 
     // 🔍 1. Canvas Macro Modifiers (Ctrl/Cmd Bindings)
     if (e.metaKey || e.ctrlKey) {

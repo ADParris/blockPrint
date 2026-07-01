@@ -1,10 +1,7 @@
+// src/components/Kanban/PageKanbanView.tsx
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  WorkspaceViewMode,
-  type Page,
-  type ProgressState,
-} from '../../state/types';
+import type { Page, ProgressState } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 import Card from '../Card';
@@ -18,38 +15,31 @@ const COLUMNS: { id: ProgressState; title: string; color: string }[] = [
 
 export const PageKanbanView: React.FC = () => {
   const navigate = useNavigate();
-  const getProjectPages = useProjectStore((state) => state.getProjectPages);
-  const movePageInKanban = useProjectStore((state) => state.movePageInKanban);
-  const setWorkspaceViewMode = useProjectStore(
-    (state) => state.setWorkspaceViewMode,
-  );
-  const setActivePageId = useProjectStore((state) => state.setActivePageId);
+
+  // 🎯 1. Extract parameters directly out of the address path
   const { namespace, projectId } = useParams<{
     namespace: string;
     projectId: string;
   }>();
 
-  const handleCardClick = (pageId: string) => {
-    setActivePageId(pageId);
-    setWorkspaceViewMode(WorkspaceViewMode.PageKanban);
+  // 🎯 2. Atomic Selector Subscriptions for clean rendering performance
+  const getProjectPages = useProjectStore((state) => state.getProjectPages);
+  const movePageInKanban = useProjectStore((state) => state.movePageInKanban);
 
-    // 🎯 Push the pageId into the browser URL path so GlobalView catches the parameter shift
-    navigate(paths.pageRoadmap(namespace || 'ADParris', projectId!, pageId), {
-      state: { from: 'roadmap' },
-    });
+  const targetNamespace = namespace || 'ADParris';
+
+  const handleCardClick = (pageId: string) => {
+    if (!projectId) return;
+    navigate(paths.pageKanban(targetNamespace, projectId, pageId));
   };
 
   const handleOnBackClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
 
-    // 🎯 If we are at the Project level Roadmap, we *must* go back to the Dashboard
     if (projectId) {
-      setWorkspaceViewMode(WorkspaceViewMode.ProjectDashboard);
-      navigate(paths.projectDashboard(namespace || 'ADParris', projectId));
-    }
-    // 🎯 Ultimate baseline fallback
-    else {
-      navigate(`/${namespace || 'ADParris'}`);
+      navigate(paths.projectDashboard(targetNamespace, projectId));
+    } else {
+      navigate(`/${targetNamespace}`);
     }
   };
 
@@ -58,9 +48,16 @@ export const PageKanbanView: React.FC = () => {
       title="Project Roadmap"
       subtitle="Track and organize documents and features across production pipelines."
       columns={COLUMNS}
-      itemsByColumn={(columnId) => getProjectPages(columnId as ProgressState)}
+      itemsByColumn={(columnId) =>
+        getProjectPages(projectId, columnId as ProgressState)
+      }
       onMoveItem={(pageId, targetColumnId, targetIndex) =>
-        movePageInKanban(pageId, targetColumnId as ProgressState, targetIndex)
+        movePageInKanban(
+          projectId,
+          pageId,
+          targetColumnId as ProgressState,
+          targetIndex,
+        )
       }
       onBack={handleOnBackClick}
       renderCard={(page) => (

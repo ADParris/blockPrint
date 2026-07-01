@@ -5,10 +5,9 @@ import { projectApi } from '../api/projects';
 import { createCanvasSlice } from './canvasSlice';
 import { createDocumentSlice } from './documentSlice';
 import { createImageSlice } from './imageSlice';
-import { createProjectSlice } from './projectSlice';
 import { createKanbanSlice } from './kanbanSlice';
+import { createProjectSlice } from './projectSlice';
 import type { ProjectState } from './types';
-import { WorkspaceViewMode } from './types';
 
 // 🎯 FIX 1: Explicitly match the backup file database partition key
 const mockUserId = 'u1';
@@ -40,10 +39,7 @@ export const useProjectStore = create<ProjectState>()(
       userSortOrders: {},
 
       // --- UI States ---
-      activeProjectId: null,
-      activePageId: null,
       activeBlockId: '',
-      activeViewMode: WorkspaceViewMode.ProjectDashboard,
       isLoading: true, // Remains true until local hydration finishes
       imageCache: {},
 
@@ -52,10 +48,6 @@ export const useProjectStore = create<ProjectState>()(
       ...createDocumentSlice(set, get),
       ...createImageSlice(set, get),
       ...createKanbanSlice(set, get),
-
-      setWorkspaceViewMode: (mode) => {
-        set({ activeViewMode: mode });
-      },
 
       // 🎯 PIPELINE BACKEND RESTORATION (Only runs if IndexedDB is blank)
       loadFromBackend: async () => {
@@ -119,9 +111,6 @@ export const useProjectStore = create<ProjectState>()(
         changeLog: state.changeLog,
         feedPosts: state.feedPosts,
         userSortOrders: state.userSortOrders,
-        activeProjectId: state.activeProjectId,
-        activePageId: state.activePageId,
-        activeViewMode: state.activeViewMode,
         cameraOffset: state.cameraOffset,
         zoomScale: state.zoomScale,
       }),

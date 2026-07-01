@@ -184,10 +184,7 @@ export interface ProjectState {
   feedPosts: Record<string, FeedPost[]>;
 
   // --- 2. Ephemeral UI & Active Selections ---
-  activeProjectId: string | null;
-  activePageId: string | null;
   activeBlockId: string | null;
-  activeViewMode: WorkspaceViewModeType;
   isLoading: boolean;
   imageCache: Record<string, string>;
 
@@ -196,74 +193,124 @@ export interface ProjectState {
   zoomScale: number;
 
   // --- 4. Project Slice Actions ---
-  setActiveProjectId: (id: string | null) => void;
-  setActivePageId: (id: string | null) => void;
   addProject: (
     name: string,
     description?: string,
     groupId?: string | null,
-  ) => void;
-  addPage: (projectId: string, title: string) => void;
+  ) => string;
+  addPage: (projectId: string | undefined, title: string) => string;
   updatePageStatus: (
-    projectId: string,
-    pageId: string,
+    projectId: string | undefined,
+    pageId: string | undefined,
     nextStatus: ProgressState,
   ) => void;
-  updatePageHeader: (pageId: string, updates: Partial<Page>) => void;
+  updatePageHeader: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    updates: Partial<Page>,
+  ) => void;
   addHistoryEntry: (
+    projectId: string | undefined,
     targetType: BaseElementType,
     targetName: string,
     actionType: BaseActionType,
     details?: string,
   ) => void;
   reorderSidebarItems: (
-    projectId: string | null, // null for top-level global project folders
+    projectId: string | undefined | null, // null for top-level global project folders
     activeIndex: string | number,
     overIndex: string | number,
     type: Omit<BaseElementType, 'Block'>,
   ) => void;
-  deleteProject: (projectId: string) => void;
-  deletePage: (projectId: string, pageId: string) => void;
+  deleteProject: (projectId: string | undefined) => void;
+  deletePage: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+  ) => void;
 
   // --- 5. Document Slice Actions ---
-  updateBlockContent: (id: string, newContent: string) => void;
-  updateBlockType: (id: string, newType: BlockType) => void;
-  deleteBlock: (id: string) => void;
+  insertBlockAtIndex: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    targetIndex?: number,
+    initialContent?: string,
+  ) => string;
+  updateBlockContent: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    id: string,
+    newContent: string,
+  ) => void;
+  updateBlockType: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    id: string,
+    newType: BlockType,
+  ) => void;
+  deleteBlock: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    id: string,
+  ) => void;
+  moveBlockToIndex: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    activeId: string,
+    targetIndex: number,
+  ) => void;
   setActiveBlockId: (id: string | null) => void;
-  moveBlockToIndex: (activeId: string, targetIndex: number) => void;
-  insertBlockAtIndex: (targetIndex?: number, initialContent?: string) => string;
 
   // --- 6. Canvas Slice Actions ---
   setCameraOffset: (
     offset: XYPosition | ((prev: XYPosition) => XYPosition),
   ) => void;
   setZoomScale: (scale: number | ((prev: number) => number)) => void;
-  updateBlockPosition: (id: string, position: XYPosition) => void;
-  addBlockConnectionByKey: (connectionKey: string) => void;
-  removeBlockConnectionByKey: (connectionKey: string) => void;
+  updateBlockPosition: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    blockId: string,
+    position: XYPosition,
+  ) => void;
+  addBlockConnectionByKey: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    connectionKey: string,
+  ) => void;
+  removeBlockConnectionByKey: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    connectionKey: string,
+  ) => void;
 
   // --- 7. Image Slice Actions ---
   setImageCacheUrl: (blockId: string, url: string) => void;
   clearImageCache: () => void;
 
   // --- 8. Kanban Slice Actions ---
-  getPageBlocks: (columnId: ProgressState) => CanvasBlock[];
+  getPageBlocks: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    columnId: ProgressState,
+  ) => CanvasBlock[];
   moveBlockInKanban: (
+    projectId: string | undefined,
+    pageId: string | undefined,
     blockId: string,
     targetColumnId: ProgressState,
     targetIndex: number,
   ) => void;
-  getProjectPages: (columnId: ProgressState) => Page[];
+  getProjectPages: (
+    projectId: string | undefined,
+    columnId: ProgressState,
+  ) => Page[];
   movePageInKanban: (
-    blockId: string,
+    projectId: string | undefined,
+    pageId: string | undefined,
     targetColumnId: ProgressState,
     targetIndex: number,
   ) => void;
 
-  // --- 9. Workspace Navigation Actions ---
-  setWorkspaceViewMode: (mode: WorkspaceViewModeType) => void;
-
-  // --- 10. Core Sync Actions ---
+  // --- 9. Core Sync Actions ---
   loadFromBackend: () => Promise<void>;
   syncToBackend: () => Promise<void>;
 }
