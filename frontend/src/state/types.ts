@@ -3,13 +3,31 @@
 // --- 1. Core Core Layout & Canvas Geometries (Preserved Exactly) ---
 export type AnchorDirection = 'top' | 'right' | 'bottom' | 'left';
 
+export const BlockConnectionColors = [
+  'blue',
+  'emerald',
+  'rose',
+  'amber',
+] as const;
+
+export type BlockConnectionColor = (typeof BlockConnectionColors)[number];
+
 export interface BlockConnection {
   targetId: string;
   sourceDir: AnchorDirection;
   targetDir: AnchorDirection;
+  color?: BlockConnectionColor;
 }
 
-export type BlockType = 'h1' | 'h2' | 'h3' | 'p' | 'code' | 'image';
+export type BlockType =
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'p'
+  | 'bullet'
+  | 'number'
+  | 'code'
+  | 'image';
 
 export interface XYPosition {
   x: number;
@@ -234,6 +252,7 @@ export interface ProjectState {
     pageId: string | undefined,
     targetIndex?: number,
     initialContent?: string,
+    type?: BlockType, // Optional parameter to specify the block type
   ) => string;
   updateBlockContent: (
     projectId: string | undefined,
@@ -280,6 +299,12 @@ export interface ProjectState {
     projectId: string | undefined,
     pageId: string | undefined,
     connectionKey: string,
+  ) => void;
+  updateBlockConnectionColor: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    connectionKey: string,
+    color: BlockConnectionColor,
   ) => void;
 
   // --- 7. Image Slice Actions ---

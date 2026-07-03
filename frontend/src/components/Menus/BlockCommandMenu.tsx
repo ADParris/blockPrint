@@ -1,3 +1,4 @@
+// src/components/BlockCommandMenu.tsx
 import type { BlockType } from '../../state/types';
 import { useModalStore } from '../../state/useModalStore';
 import { useProjectStore } from '../../state/useProjectStore';
@@ -27,6 +28,9 @@ const BlockCommandMenu: React.FC<BlockCommandMenuProps> = ({
     { label: 'Heading 2', labelStyle: 'font-semibold', type: 'h2' },
     { label: 'Heading 3', labelStyle: 'font-medium', type: 'h3' },
     { label: 'Paragraph', labelStyle: '', type: 'p' },
+    // 🎯 New List Item Options
+    { label: '• Bullet List', labelStyle: 'text-slate-200', type: 'bullet' },
+    { label: '1. Numbered List', labelStyle: 'text-slate-200', type: 'number' },
     {
       label: 'Code Block',
       labelStyle: 'text-emerald-400',

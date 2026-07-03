@@ -1,6 +1,6 @@
 // src/components/Canvases/DocumentCanvas.tsx
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useProjectStore } from '../../state/useProjectStore';
 import BlockRenderer from '../BlockRenderer';
 import PageHeader from '../PageHeader';
@@ -12,6 +12,7 @@ const DocumentCanvas: React.FC = () => {
     projectId: string;
     pageId: string;
   }>();
+  const location = useLocation();
 
   // 🎯 2. Atomic Selector Subscriptions (Prevents unnecessary re-renders)
   const pages = useProjectStore((state) => state.pages);
@@ -27,7 +28,46 @@ const DocumentCanvas: React.FC = () => {
       ? pages[projectId].find((p) => p.id === pageId)
       : null;
 
-  // 4. Guard Gate! Safe structural fallback if no page matches the route path
+  // 🎯 4. Auto-Scroll Listener Engine
+  useEffect(() => {
+    // Look for incoming target hash references (e.g., #block-1782864...)
+    if (location.hash && location.hash.startsWith('#block-')) {
+      const targetId = location.hash.replace('#', '');
+
+      // Give SortableList/BlockRenderer a micro-task tick to ensure the DOM is painted
+      const scrollTimeout = setTimeout(() => {
+        const element = document.getElementById(targetId);
+
+        if (element) {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center', // Centers the text node perfectly on the viewport axis
+          });
+
+          // Focus the block active id state inside Zustand automatically
+          const dynamicBlockId = targetId.replace('block-', '');
+          setActiveBlockId(dynamicBlockId);
+
+          // Spark a smooth visual ring to guide the writer's eye
+          element.classList.add(
+            'ring-2',
+            'ring-sky-500/20',
+            'rounded-lg',
+            'transition-all',
+            'duration-300',
+          );
+
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-sky-500/20');
+          }, 1200);
+        }
+      }, 150);
+
+      return () => clearTimeout(scrollTimeout);
+    }
+  }, [location.hash, setActiveBlockId]);
+
+  // 5. Guard Gate! Safe structural fallback if no page matches the route path
   if (!projectId || !pageId || !activePage) {
     return (
       <div className="flex h-full items-center justify-center text-slate-400">

@@ -1,1 +1,29 @@
 @import 'tailwindcss';
+
+/* 🚫 Force Google Voice and other dialer extensions to remain completely invisible inside blocks */
+[id^='block-'] div,
+[id^='block-'] textarea,
+.shiki-container,
+[id^='block-'] * {
+  content-visibility: auto;
+}
+
+/* Target known Google Voice / Skype injection wrappers specifically */
+gv-container,
+gv-span,
+.skype_pbc_container,
+a[href^='tel'] {
+  display: inline !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  pointer-events: none !important;
+}
+
+/* Hide any injected image icons from dialers */
+gv-container img,
+gv-span img,
+a[href^='tel'] img {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}

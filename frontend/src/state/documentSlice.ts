@@ -7,6 +7,7 @@ export interface DocumentActions {
     pageId: string | undefined,
     targetIndex?: number,
     initialContent?: string,
+    type?: BlockType, // Optional parameter to specify the block type
   ) => string;
   updateBlockContent: (
     projectId: string | undefined,
@@ -35,11 +36,17 @@ export interface DocumentActions {
 }
 
 export const createDocumentSlice: StoreSlice<DocumentActions> = (set, get) => ({
-  insertBlockAtIndex: (projectId, pageId, targetIndex, initialContent = '') => {
+  insertBlockAtIndex: (
+    projectId,
+    pageId,
+    targetIndex,
+    initialContent = '',
+    type = 'p',
+  ) => {
     const newId = crypto.randomUUID();
     const newBlock: CanvasBlock = {
       id: newId,
-      type: 'p',
+      type, // 🎯 Use the passed type (defaults to 'p')
       content: initialContent,
     };
     const { pages } = get();

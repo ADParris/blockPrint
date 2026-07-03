@@ -16,7 +16,7 @@ import ArrowCommandMenu from '../Menus/ArrowCommandMenu';
 import BlockCommandMenu from '../Menus/BlockCommandMenu';
 import Modal from '../Modal';
 import Sidebar from '../Sidebar';
-import { BlockKanbanView } from './BlockKanbanView';
+import { PageBlockKanbanView } from './PageBlockKanbanView';
 import { PageKanbanView } from './PageKanbanView';
 import { ProjectDashboardView } from './ProjectDashboardView';
 
@@ -202,7 +202,7 @@ const GlobalView: React.FC = () => {
       }
 
       // 🎯 Match trailing router endpoints directly
-      if (isBlockKanban) return <BlockKanbanView />;
+      if (isBlockKanban) return <PageBlockKanbanView />;
       if (isCanvas) return <SpatialCanvas />;
 
       // Default / fallback component view

@@ -4,6 +4,20 @@ import type { BlockType, CanvasBlock } from '../state/types';
 import { useProjectStore } from '../state/useProjectStore';
 import ImageBlock from './ImageBlock';
 
+// Helper function to break up consecutive digits for extension scanners
+const breakNumberScanners = (text: string): string => {
+  // If the text is purely a long sequence of numbers (like 7+ digits)
+  if (/^\d{7,}$/.test(text.trim())) {
+    return text.charAt(0) + '\u200B' + text.slice(1);
+  }
+  return text;
+};
+
+// Helper to clean the text back up when saving to the Zustand store
+const cleanZeroWidthSpaces = (text: string): string => {
+  return text.replace(/\u200B/g, '');
+};
+
 interface BlockProps {
   projectId: string;
   pageId: string;
@@ -43,8 +57,9 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    updateBlockContent(projectId, pageId, block.id, value);
+    // Clean out the zero-width space before committing to IndexedDB/Zustand store!
+    const rawValue = cleanZeroWidthSpaces(e.target.value);
+    updateBlockContent(projectId, pageId, block.id, rawValue);
   };
 
   let elementToRender: React.ReactNode;
@@ -53,10 +68,15 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
     if (isEditing) {
       elementToRender = (
         <textarea
-          defaultValue={block.content}
+          // Use the display helper to shield the phone number
+          defaultValue={breakNumberScanners(block.content)}
           data-block-id={block.id}
           onChange={handleTextareaChange}
           onBlur={() => setIsEditing(false)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false} // Code blocks stay clean of red squiggles
           className="w-full field-sizing-content min-h-32 max-h-128 p-4 bg-[#1e1e1e] font-mono text-sm text-slate-100 rounded-lg border border-slate-800 outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 resize-none whitespace-pre-wrap"
           placeholder="// Type your code here..."
           autoFocus
@@ -99,8 +119,57 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
         }
       />
     );
+  } else if (block.type === 'bullet' || block.type === 'number') {
+    // 🎯 Calculate the dynamic serial position for ordered items
+    let listNumber = 1;
+    if (block.type === 'number') {
+      const projectPages = useProjectStore.getState().pages[projectId] || [];
+      const currentPage = projectPages.find((page) => page.id === pageId);
+      const blocks = currentPage?.blocks || [];
+      const currentIndex = blocks.findIndex((b) => b.id === block.id);
+
+      // Count backwards to find how many consecutive number blocks precede this one
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        if (blocks[i].type === 'number') {
+          listNumber++;
+        } else {
+          break; // Stop counting if the sequence breaks
+        }
+      }
+    }
+
+    elementToRender = (
+      <div className="flex items-start w-full gap-2 my-0.5 text-base leading-relaxed">
+        {/* Non-interactive List Marker */}
+        <div
+          className="flex items-center justify-end min-w-6 select-none text-slate-400 font-medium pt-0.75"
+          contentEditable={false}
+        >
+          {block.type === 'bullet' ? (
+            <span className="text-lg leading-none select-none">•</span>
+          ) : (
+            <span className="text-sm font-mono tracking-tighter select-none">
+              {listNumber}.
+            </span>
+          )}
+        </div>
+
+        <textarea
+          value={breakNumberScanners(block.content)}
+          data-block-id={block.id}
+          onChange={handleTextareaChange}
+          placeholder="List item"
+          spellCheck={true} // ✨ Grammarly and spellcheck enabled!
+          className="w-full field-sizing-content resize-none bg-transparent text-slate-100 outline-none border-none wrap-break-words overflow-hidden whitespace-pre-wrap"
+          rows={1}
+        />
+      </div>
+    );
   } else {
-    const styleMap: Record<Exclude<BlockType, 'code' | 'image'>, string> = {
+    const styleMap: Record<
+      Exclude<BlockType, 'code' | 'image' | 'bullet' | 'number'>,
+      string
+    > = {
       h1: 'text-3xl font-bold tracking-tight my-2',
       h2: 'text-2xl font-semibold tracking-tight my-1.5',
       h3: 'text-xl font-medium tracking-tight my-1',
@@ -109,7 +178,7 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
 
     elementToRender = (
       <textarea
-        value={block.content}
+        value={breakNumberScanners(block.content)}
         data-block-id={block.id}
         onChange={handleTextareaChange}
         placeholder={
@@ -119,9 +188,14 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
               ? 'Heading 2'
               : 'Type text here...'
         }
+        spellCheck={true} // ✨ Grammarly and spellcheck enabled!
         className={`w-full field-sizing-content resize-none bg-transparent text-slate-100 outline-none border-none wrap-break-words overflow-hidden whitespace-pre-wrap ${
-          styleMap[block.type as Exclude<BlockType, 'code' | 'image'>] ||
-          styleMap.p
+          styleMap[
+            block.type as Exclude<
+              BlockType,
+              'code' | 'image' | 'bullet' | 'number'
+            >
+          ] || styleMap.p
         }`}
         rows={1}
       />
@@ -129,7 +203,10 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
   }
 
   return (
-    <div className="group relative flex items-start w-full pl-8 pr-4 min-h-7">
+    <div
+      id={`block-${block.id}`}
+      className="group relative flex items-start w-full pl-8 pr-4 min-h-7"
+    >
       {/* Drag Handle */}
       <div
         className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group/handle group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 select-none  hover:z-50"

@@ -89,7 +89,7 @@
           "lastEditedBy": {
             "userId": "u1",
             "userName": "ADParris",
-            "timestamp": 1782861566946
+            "timestamp": 1782936551439
           },
           "blocks": [
             {
@@ -191,6 +191,41 @@
                 "columnId": "Pending",
                 "orderIndex": 2
               }
+            },
+            {
+              "id": "9daacded-9998-43e7-ab9e-afefb1458aa0",
+              "type": "bullet",
+              "content": "1"
+            },
+            {
+              "id": "ab786da1-4d30-4043-8e0a-b83c7edb1b75",
+              "type": "bullet",
+              "content": "2"
+            },
+            {
+              "id": "67ce1967-e9c2-4693-9353-89467f0720ec",
+              "type": "bullet",
+              "content": "3"
+            },
+            {
+              "id": "fe49fe59-c4bb-47bc-801a-efc844118c9f",
+              "type": "number",
+              "content": "1"
+            },
+            {
+              "id": "2bf1e023-3121-4b10-a519-0f03253baec5",
+              "type": "number",
+              "content": "2"
+            },
+            {
+              "id": "ed40659d-cd70-4366-8261-0ad3d692e7d6",
+              "type": "number",
+              "content": "3"
+            },
+            {
+              "id": "7f4f1529-ff1b-4449-a8d7-1af2be4c9229",
+              "type": "number",
+              "content": "4"
             }
           ],
           "kanban": {
@@ -245,19 +280,32 @@
           "lastEditedBy": {
             "userId": "u1",
             "userName": "ADParris",
-            "timestamp": 1782867736340
+            "timestamp": 1783051072594
           },
           "blocks": [
             {
-              "id": "3f9e5fe2-dadb-450a-82c0-fcb53fb8ee85",
+              "id": "4a75a280-0c9b-4a73-86d5-fdcc7f69c372",
               "type": "p",
-              "content": "12",
+              "content": "1​234567890",
               "position": {
-                "x": 120,
-                "y": 120
+                "x": 640,
+                "y": 480
               },
+              "connections": [
+                {
+                  "targetId": "33307a8c-7f27-43e8-9c6f-23ff374d29f0",
+                  "sourceDir": "bottom",
+                  "targetDir": "bottom"
+                },
+                {
+                  "targetId": "33307a8c-7f27-43e8-9c6f-23ff374d29f0",
+                  "sourceDir": "left",
+                  "targetDir": "right",
+                  "color": "emerald"
+                }
+              ],
               "kanban": {
-                "columnId": "InProgress",
+                "columnId": "Pending",
                 "orderIndex": 0
               }
             },
@@ -267,9 +315,14 @@
               "content": "33307a8c-7f27-43e8-9c6f-23ff374d29f0",
               "position": {
                 "x": 120,
-                "y": 360
+                "y": 480
               },
               "connections": [
+                {
+                  "targetId": "3f9e5fe2-dadb-450a-82c0-fcb53fb8ee85",
+                  "sourceDir": "left",
+                  "targetDir": "left"
+                },
                 {
                   "targetId": "3f9e5fe2-dadb-450a-82c0-fcb53fb8ee85",
                   "sourceDir": "top",
@@ -278,13 +331,60 @@
               ],
               "kanban": {
                 "columnId": "Pending",
-                "orderIndex": 0
+                "orderIndex": 1
               }
             },
             {
               "id": "88242605-42c2-4517-99b2-58b77b453721",
               "type": "code",
-              "content": "// src/App.tsx\nimport { Navigate, Route, Routes } from 'react-router-dom';\nimport GlobalView from './components/Views/GlobalView';\n\nfunction App() {\n  return (\n    <>\n      {/* 🎯 Define the routing map right here */}\n      <Routes>\n        {/* Default landing: redirect straight to your personal workspace */}\n        <Route path=\"/\" element={<Navigate to=\"/ADParris\" replace />} />\n\n        {/* This route catches namespaces, project IDs, AND page IDs all under one roof */}\n        <Route path=\"/:namespace\" element={<GlobalView />} />\n        <Route\n          path=\"/:namespace/projects/:projectId\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/dashboard\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/roadmap\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/document\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/kanban\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/canvas\"\n          element={<GlobalView />}\n        />\n\n        {/* Catch-all fallback */}\n        <Route\n          path=\"*\"\n          element={\n            <div className=\"flex items-center justify-center h-full text-slate-500 text-xs\">\n              Route not found.\n            </div>\n          }\n        />\n      </Routes>\n    </>\n  );\n}\n\nexport default App;\n"
+              "content": "// src/App.tsx\nimport { Navigate, Route, Routes } from 'react-router-dom';\nimport GlobalView from './components/Views/GlobalView';\n\nfunction App() {\n  return (\n    <>\n      {/* 🎯 Define the routing map right here */}\n      <Routes>\n        {/* Default landing: redirect straight to your personal workspace */}\n        <Route path=\"/\" element={<Navigate to=\"/ADParris\" replace />} />\n\n        {/* This route catches namespaces, project IDs, AND page IDs all under one roof */}\n        <Route path=\"/:namespace\" element={<GlobalView />} />\n        <Route\n          path=\"/:namespace/projects/:projectId\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/dashboard\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/roadmap\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/document\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/kanban\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/canvas\"\n          element={<GlobalView />}\n        />\n\n        {/* Catch-all fallback */}\n        <Route\n          path=\"*\"\n          element={\n            <div className=\"flex items-center justify-center h-full text-slate-500 text-xs\">\n              Route not found.\n            </div>\n          }\n        />\n      </Routes>\n    </>\n  );\n}\n\nexport default App;\n",
+              "position": {
+                "x": 640,
+                "y": 120
+              },
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 2
+              },
+              "connections": [
+                {
+                  "targetId": "4a75a280-0c9b-4a73-86d5-fdcc7f69c372",
+                  "sourceDir": "right",
+                  "targetDir": "right",
+                  "color": "rose"
+                },
+                {
+                  "targetId": "4a75a280-0c9b-4a73-86d5-fdcc7f69c372",
+                  "sourceDir": "bottom",
+                  "targetDir": "top"
+                }
+              ]
+            },
+            {
+              "id": "3f9e5fe2-dadb-450a-82c0-fcb53fb8ee85",
+              "type": "p",
+              "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed dignissim dictum posuere. Sed vel semper nisi. Nulla quis leo imperdiet, tincidunt ligula auctor, interdum risus. Ut a nisi id ante imperdiet faucibus vitae maximus ipsum. Ut auctor, magna at tincidunt porttitor, nibh orci lacinia tellus, ac bibendum sem risus a dolor. Nullam a porta ex, sit amet posuere sapien. Etiam ultrices vitae ligula et efficitur. Integer ac sollicitudin massa, nec semper ante. In quis risus ac diam molestie commodo non at sem.\n\nCras nec eros at felis tempus mattis viverra ac nulla. Nulla est erat, egestas nec blandit a, volutpat sed sem. Aliquam nec tincidunt odio. Cras interdum bibendum neque at iaculis. Suspendisse maximus, felis eget pulvinar pretium, ante libero consequat ante, eu hendrerit purus orci eu sem. Duis lectus nisl, fringilla eget volutpat at, tristique mattis eros. Suspendisse tincidunt nisi eget dignissim volutpat. Nunc aliquam, arcu vel aliquet tristique, sapien lectus ultricies ipsum, quis luctus augue odio vitae sapien. Aenean cursus mi vitae tellus pellentesque imperdiet. Duis sit amet lacinia libero.",
+              "position": {
+                "x": 120,
+                "y": 120
+              },
+              "kanban": {
+                "columnId": "InProgress",
+                "orderIndex": 0
+              },
+              "connections": [
+                {
+                  "targetId": "88242605-42c2-4517-99b2-58b77b453721",
+                  "sourceDir": "top",
+                  "targetDir": "top"
+                },
+                {
+                  "targetId": "88242605-42c2-4517-99b2-58b77b453721",
+                  "sourceDir": "right",
+                  "targetDir": "left",
+                  "color": "amber"
+                }
+              ]
             }
           ],
           "coverImage": "page_1782864932126",

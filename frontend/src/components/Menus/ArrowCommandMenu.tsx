@@ -1,5 +1,6 @@
 // src/components/Menus/ArrowCommandMenu.tsx
 import React from 'react';
+import type { BlockConnectionColor } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
 
 interface ArrowCommandMenuProps {
@@ -19,6 +20,42 @@ const ArrowCommandMenu: React.FC<ArrowCommandMenuProps> = ({
   const removeBlockConnectionByKey = useProjectStore(
     (state) => state.removeBlockConnectionByKey,
   );
+  const updateBlockConnectionColor = useProjectStore(
+    (state) => state.updateBlockConnectionColor,
+  );
+
+  const colors = [
+    {
+      id: 'blue',
+      label: 'Default Blue',
+      textClass: 'text-blue-400',
+      bgHover: 'hover:bg-blue-500/10',
+    },
+    {
+      id: 'emerald',
+      label: 'Green (Success)',
+      textClass: 'text-emerald-400',
+      bgHover: 'hover:bg-emerald-500/10',
+    },
+    {
+      id: 'rose',
+      label: 'Red (Error)',
+      textClass: 'text-rose-400',
+      bgHover: 'hover:bg-rose-500/10',
+    },
+    {
+      id: 'amber',
+      label: 'Yellow (Warning)',
+      textClass: 'text-amber-400',
+      bgHover: 'hover:bg-amber-500/10',
+    },
+  ] as const;
+
+  const handleColorChange = (colorId: BlockConnectionColor) => {
+    // 🎯 Pass explicit routing keys to fulfill the new slice method signature
+    updateBlockConnectionColor(projectId, pageId, connectionId, colorId);
+    onClose();
+  };
 
   const handleDeleteConnection = () => {
     // 🎯 Pass explicit routing keys to fulfill the new slice method signature
@@ -27,28 +64,35 @@ const ArrowCommandMenu: React.FC<ArrowCommandMenuProps> = ({
   };
 
   return (
-    <div className="w-56 bg-slate-900 border border-slate-800 rounded-xl p-2 shadow-2xl text-slate-200">
-      <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-800 mb-1">
-        Connection Options
+    <div className="w-48 bg-slate-950 border border-slate-800 rounded-lg shadow-xl py-1 flex flex-col text-xs text-slate-300">
+      {/* Heading Section */}
+      <div className="px-2.5 py-1.5 text-[10px] font-semibold text-slate-500 tracking-wider uppercase">
+        Line Color
       </div>
 
-      {/* Action: Color Customization Placeholder */}
-      <button
-        onClick={() => {
-          /* Future styling logic */
-          onClose();
-        }}
-        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-800 rounded-md transition-colors text-slate-300"
-      >
-        Change Line Color...
-      </button>
+      {/* Color Palette List */}
+      {colors.map((color) => (
+        <button
+          key={color.id}
+          onClick={() => handleColorChange(color.id)}
+          className={`flex items-center gap-2 px-2.5 py-1.5 text-left w-full transition-colors duration-150 ${color.bgHover}`}
+        >
+          <span
+            className={`h-2 w-2 rounded-full bg-current ${color.textClass}`}
+          />
+          <span>{color.label}</span>
+        </button>
+      ))}
 
-      {/* Action: Delete Connection */}
+      {/* Faint Horizontal Line Separator */}
+      <div className="h-px bg-slate-800/60 my-1 mx-1" />
+
+      {/* Danger / Action Row */}
       <button
         onClick={handleDeleteConnection}
-        className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+        className="flex items-center gap-2 px-2.5 py-1.5 text-left w-full text-rose-400 hover:bg-rose-500/10 transition-colors duration-150"
       >
-        Delete Connection
+        <span>Delete Connection</span>
       </button>
     </div>
   );

@@ -14,6 +14,7 @@ export const useDocumentKeyboard = (
   const updateBlockContent = useProjectStore(
     (state) => state.updateBlockContent,
   );
+  const updateBlockType = useProjectStore((state) => state.updateBlockType);
   const insertBlockAtIndex = useProjectStore(
     (state) => state.insertBlockAtIndex,
   );
@@ -53,15 +54,26 @@ export const useDocumentKeyboard = (
       const leftText = currentText.substring(0, cursorPosition);
       const rightText = currentText.substring(cursorPosition);
 
-      updateBlockContent(projectId, pageId, blockId, leftText);
+      // Find current block to see if we should carry over a list type
       const currentBlockIndex = blocks.findIndex(
         (block) => block.id === blockId,
       );
+      const currentBlock = blocks[currentBlockIndex];
+
+      // Perpetuate list type if we are currently inside one
+      const nextBlockType =
+        currentBlock?.type === 'bullet' || currentBlock?.type === 'number'
+          ? currentBlock.type
+          : 'p';
+
+      updateBlockContent(projectId, pageId, blockId, leftText);
+
       const newBlockId = insertBlockAtIndex(
         projectId,
         pageId,
         currentBlockIndex + 1,
         rightText,
+        nextBlockType, // 🎯 Pass the type forward
       );
 
       setTimeout(() => {
@@ -137,7 +149,32 @@ export const useDocumentKeyboard = (
         const currentBlockIndex = blocks.findIndex(
           (block) => block.id === blockId,
         );
+        const currentBlock = blocks[currentBlockIndex];
 
+        // 🎯 Intercept list blocks first!
+        if (
+          currentBlock &&
+          (currentBlock.type === 'bullet' || currentBlock.type === 'number')
+        ) {
+          const currentCursor = target.selectionStart ?? 0;
+
+          // Revert type back to standard paragraph
+          updateBlockType(projectId, pageId, blockId, 'p');
+
+          // ⚡ Force focus back onto the newly rendered paragraph textarea
+          setTimeout(() => {
+            const currentElement = document.querySelector(
+              `textarea[data-block-id="${blockId}"]`,
+            ) as HTMLTextAreaElement;
+            if (currentElement) {
+              currentElement.focus();
+              currentElement.setSelectionRange(currentCursor, currentCursor);
+            }
+          }, 0);
+          return true;
+        }
+
+        // --- Standard Deletion & Merging (Only runs if it's already a standard block) ---
         if (currentBlockIndex > 0) {
           const previousBlock = blocks[currentBlockIndex - 1];
           const currentBlockContent = target.value || '';

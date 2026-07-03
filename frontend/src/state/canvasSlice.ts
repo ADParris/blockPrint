@@ -48,6 +48,12 @@ export interface CanvasSlice {
     pageId: string | undefined,
     connectionKey: string,
   ) => void;
+  updateBlockConnectionColor: (
+    projectId: string | undefined,
+    pageId: string | undefined,
+    connectionKey: string,
+    color: 'blue' | 'emerald' | 'rose' | 'amber',
+  ) => void;
 }
 
 export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
@@ -173,6 +179,43 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
           userName: get().currentUser?.name || 'Unknown',
           timestamp: Date.now(),
         },
+      };
+    });
+
+    set({ pages: { ...pages, [projectId]: updatedPages } });
+  },
+
+  updateBlockConnectionColor: (projectId, pageId, connectionKey, color) => {
+    const parsed = parseConnectionKey(connectionKey);
+    if (!parsed) return;
+
+    const { sourceId, targetId, sourceDir, targetDir } = parsed;
+    const { pages } = get();
+    if (!projectId || !pageId || !pages[projectId]) return;
+
+    const updatedPages = pages[projectId].map((page) => {
+      if (page.id !== pageId) return page;
+
+      return {
+        ...page,
+        blocks: page.blocks.map((block) => {
+          if (block.id !== sourceId) return block;
+
+          return {
+            ...block,
+            connections: (block.connections ?? []).map((c) => {
+              // Find the exact matching line path and append the color attribute
+              if (
+                c.targetId === targetId &&
+                c.sourceDir === sourceDir &&
+                c.targetDir === targetDir
+              ) {
+                return { ...c, color };
+              }
+              return c;
+            }),
+          };
+        }),
       };
     });
 
