@@ -155,14 +155,26 @@ export const useSpatialMouse = ({
     // Keep active velocities fresh
     vectorRef.current = { dx: nextDx, dy: nextDy };
 
-    // Queue up the pass-through filter timer if it isn't running
-    if (!isLoopingRef.current && !hoverTimeoutId.current) {
-      hoverTimeoutId.current = setTimeout(() => {
-        hoverTimeoutId.current = null;
+    // 🎯 THE HOOK PROTECTION:
+    // If the pan animation loop is already running, exit immediately!
+    if (isLoopingRef.current) return;
+
+    // If the mouse is sliding around high-frequency near the edge,
+    // drop the stale timer so they don't stack up concurrently.
+    if (hoverTimeoutId.current) {
+      clearTimeout(hoverTimeoutId.current);
+    }
+
+    // Queue up the single, isolated pass-through filter timer
+    hoverTimeoutId.current = setTimeout(() => {
+      hoverTimeoutId.current = null;
+
+      // Double check right before spinning up the loop engine
+      if (!isLoopingRef.current) {
         isLoopingRef.current = true;
         requestAnimationFrame(startAnimationLoop);
-      }, hoverDelay);
-    }
+      }
+    }, hoverDelay);
   };
 
   // Safe cleaner interceptor when the mouse leaves the outer div area completely

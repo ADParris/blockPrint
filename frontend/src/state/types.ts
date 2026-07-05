@@ -163,21 +163,38 @@ export interface Project {
   teamMembers: string[]; // Array of User IDs`
 }
 
-// --- 4. Ephemeral UI Commands & Menus (Preserved) ---
+// --- 4. Ephemeral UI Commands & Menus ---
 export const CommandMenus = {
   ArrowCommand: 'ARROW_COMMAND',
   BlockCommand: 'BLOCK_COMMAND',
 } as const;
-
 export type CommandMenusType = (typeof CommandMenus)[keyof typeof CommandMenus];
 
+// 🎯 2. Global Element Tracking (Used for History logs/audit entries where any target counts)
+// 🎯 The ultimate source of truth for elements in the system
 export const BaseElement = {
   Project: 'PROJECT',
   Page: 'PAGE',
   Block: 'BLOCK',
 } as const;
-
 export type BaseElementType = (typeof BaseElement)[keyof typeof BaseElement];
+// Evaluates to: 'PROJECT' | 'PAGE' | 'BLOCK'
+
+// 🎯 Explicitly derived UI slice for the sidebar
+export type SidebarElementType = Exclude<BaseElementType, 'BLOCK'>;
+// Evaluates exactly to: 'PROJECT' | 'PAGE'
+
+export const SidebarElement = {
+  Project: 'PROJECT',
+  Page: 'PAGE',
+} as const;
+
+export const DropZoneScope = {
+  Personal: 'PERSONAL',
+  Group: 'GROUP',
+} as const;
+export type DropZoneScopeType =
+  (typeof DropZoneScope)[keyof typeof DropZoneScope];
 
 export const BaseAction = {
   Create: 'CREATE',
@@ -185,7 +202,6 @@ export const BaseAction = {
   Delete: 'DELETE',
   Move: 'MOVE',
 } as const;
-
 export type BaseActionType = (typeof BaseAction)[keyof typeof BaseAction];
 
 // 🎯 The Master State Interface representing the complete merged project store
@@ -205,12 +221,18 @@ export interface ProjectState {
   activeBlockId: string | null;
   isLoading: boolean;
   imageCache: Record<string, string>;
+  activeSidebarDragObject: SidebarElementType | null;
+  activeSidebarDragScope: DropZoneScopeType | null;
 
   // --- 3. Ephemeral Infinite Grid Viewport States ---
   cameraOffset: XYPosition;
   zoomScale: number;
 
   // --- 4. Project Slice Actions ---
+  setActiveSidebarDrag: (
+    type: SidebarElementType | null,
+    scope: DropZoneScopeType | null,
+  ) => void;
   addProject: (
     name: string,
     description?: string,
@@ -238,7 +260,7 @@ export interface ProjectState {
     projectId: string | undefined | null, // null for top-level global project folders
     activeIndex: string | number,
     overIndex: string | number,
-    type: Omit<BaseElementType, 'Block'>,
+    type: SidebarElementType,
   ) => void;
   deleteProject: (projectId: string | undefined) => void;
   deletePage: (

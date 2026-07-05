@@ -1,7 +1,7 @@
 // src/components/Kanban/PageKanbanView.tsx
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { Page, ProgressState } from '../../state/types';
+import { BaseElement, type Page, type ProgressState } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 import Card from '../Card';
@@ -46,6 +46,7 @@ export const PageKanbanView: React.FC = () => {
   return (
     <KanbanBoard<Page>
       title="Project Roadmap"
+      elementType={BaseElement.Page}
       subtitle="Track and organize documents and features across production pipelines."
       columns={COLUMNS}
       itemsByColumn={(columnId) =>

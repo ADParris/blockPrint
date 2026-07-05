@@ -2,42 +2,55 @@
 import React from 'react';
 import { LuFolder, LuPlus } from 'react-icons/lu';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { Page, Project } from '../../state/types';
+import {
+  DropZoneScope,
+  type DropZoneScopeType,
+  type Page,
+  type Project,
+  SidebarElement,
+} from '../../state/types';
+import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 import SortableList from '../SortableList';
 import { SidebarPageItem } from './SidebarPageItem';
 
 interface SidebarProjectItemProps {
   project: Project;
+  index: number;
   targetNamespace: string;
   activeProjectId: string | null;
   activePageId: string | null;
+  section: DropZoneScopeType;
   sortedPages: Page[];
   isMenuOpen: boolean;
   onCreatePageClick: (e: React.MouseEvent) => void;
   onMenuToggle: (e: React.MouseEvent) => void;
   onPageMenuToggle: (e: React.MouseEvent, pageId: string) => void;
-  onReorderPages: (activeIndex: number, overIndex: number) => void;
   activeMenuTargetId?: string;
   activeMenuType?: string;
 }
 
 export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
   project,
+  index,
   targetNamespace,
   activeProjectId,
   activePageId,
   sortedPages,
+  section,
   isMenuOpen,
   onCreatePageClick,
   onMenuToggle,
   onPageMenuToggle,
-  onReorderPages,
   activeMenuTargetId,
   activeMenuType,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const setActiveSidebarDrag = useProjectStore(
+    (state) => state.setActiveSidebarDrag,
+  );
 
   // 🎯 Determine layout view mode directly from browser URL location path flags
   const isProjectActive = project.id === activeProjectId;
@@ -62,9 +75,22 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
           <span
             draggable="true"
             onDragStart={(e) => {
-              e.stopPropagation(); // Prevents page-level bubble conflicts
-              e.dataTransfer.setData('text/plain', project.id);
+              e.stopPropagation();
+              e.dataTransfer.setData('text/plain', String(index));
+              e.dataTransfer.setData(
+                `application/x-${SidebarElement.Project.toLowerCase()}`,
+                String(index),
+              );
               e.dataTransfer.effectAllowed = 'move';
+              setActiveSidebarDrag(
+                SidebarElement.Project,
+                section === DropZoneScope.Personal
+                  ? DropZoneScope.Personal
+                  : DropZoneScope.Group,
+              ); // Set the active drag object type and scope in the store
+            }}
+            onDragEnd={() => {
+              setActiveSidebarDrag(null, null); // Reset the active drag object type and scope in the store
             }}
             className="cursor-grab active:cursor-grabbing mr-2 shrink-0"
           >
@@ -105,15 +131,14 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
           ) : (
             <SortableList
               items={sortedPages}
-              onMoveItem={(activeId, targetIndex) =>
-                onReorderPages(Number(activeId), targetIndex)
-              }
+              dragType={SidebarElement.Page}
+              projectId={project.id}
               renderItem={(page, index) => {
                 const isPageActive =
                   page.id === activePageId && !isDashboardActive;
                 const isPageMenuOpen =
                   activeMenuTargetId === page.id &&
-                  activeMenuType === 'BLOCK_RECON_PAGE';
+                  activeMenuType === SidebarElement.Page;
 
                 return (
                   <SidebarPageItem
@@ -133,9 +158,6 @@ export const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
                       );
                     }}
                     onMenuToggle={(e) => onPageMenuToggle(e, page.id)}
-                    onDrop={(activeId, targetIndex) =>
-                      onReorderPages(Number(activeId), targetIndex)
-                    }
                   />
                 );
               }}

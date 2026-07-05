@@ -2,17 +2,28 @@
 import type {
   BaseActionType,
   BaseElementType,
+  DropZoneScopeType,
   FeedPost,
   HistoryEntry,
   Page,
   ProgressState,
   Project,
+  SidebarElementType,
   StoreSlice,
 } from './types';
 
-import { BaseAction, BaseElement } from './types';
+import {
+  BaseAction,
+  BaseElement,
+  DropZoneScope,
+  SidebarElement,
+} from './types';
 
 export interface ProjectActions {
+  setActiveSidebarDrag: (
+    type: SidebarElementType | null,
+    scope: DropZoneScopeType | null,
+  ) => void;
   addProject: (
     name: string,
     description?: string,
@@ -41,7 +52,7 @@ export interface ProjectActions {
     projectId: string | undefined | null, // null for top-level global project folders
     activeIndex: string | number,
     overIndex: string | number,
-    type: Omit<BaseElementType, 'Block'>,
+    type: SidebarElementType,
   ) => void;
   deleteProject: (projectId: string | undefined) => void;
   deletePage: (
@@ -51,6 +62,9 @@ export interface ProjectActions {
 }
 
 export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
+  setActiveSidebarDrag: (type, scope) =>
+    set({ activeSidebarDragObject: type, activeSidebarDragScope: scope }),
+
   addProject: (name, description, groupId = null) => {
     const user = get().currentUser;
     const groups = get().groups;
@@ -253,78 +267,103 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     });
   },
 
-  reorderSidebarItems: (projectId, activeIndex, overIndex, type) => {
+  // Update the signature call or utilize the projectId slot to pass scope strings ('personal' | 'team')
+  reorderSidebarItems: (scopeOrProjectId, activeIndex, overIndex, type) => {
     const { currentUser, userSortOrders, projects, pages } = get();
     const userId = currentUser?.id || 'default_user';
-
-    const userRoot = userSortOrders[userId] || {
-      globalProjectsOrder: projects.map((p) => p.id),
-      projectPagesOrder: {},
-    };
-
-    if (type === BaseElement.Project) {
-      const baselineOrder = projects.map((p) => p.id);
-      const existingOrder = userSortOrders[userId]?.globalProjectsOrder;
-      const currentOrder = existingOrder?.length
-        ? [...existingOrder]
-        : [...baselineOrder];
-
-      baselineOrder.forEach((id) => {
-        if (!currentOrder.includes(id)) currentOrder.push(id);
-      });
-
-      const activeId = String(activeIndex);
-      const overId = String(overIndex);
-      const updatedOrder = currentOrder.filter((id) => id !== activeId);
-
-      if (overId === 'APPEND_PERSONAL') {
-        const personalIds = projects
-          .filter((p) => p.groupId === null)
-          .map((p) => p.id);
-        const lastPersonalIdx = updatedOrder.findLastIndex((id) =>
-          personalIds.includes(id),
-        );
-        updatedOrder.splice(lastPersonalIdx + 1, 0, activeId);
-      } else if (overId === 'APPEND_GROUP') {
-        updatedOrder.push(activeId);
-      } else {
-        const targetIndex = updatedOrder.indexOf(overId);
-        if (targetIndex !== -1) {
-          updatedOrder.splice(targetIndex, 0, activeId);
-        } else {
-          updatedOrder.push(activeId);
-        }
-      }
-
-      set({
-        userSortOrders: {
-          ...userSortOrders,
-          [userId]: {
-            ...(userSortOrders[userId] || { projectPagesOrder: {} }),
-            globalProjectsOrder: updatedOrder,
-          },
-        },
-      });
-      return;
-    }
-
-    if (!projectId) return;
-    const fallbackPages = (pages[projectId] || []).map((p) => p.id);
-    const currentPagesOrder = [
-      ...(userRoot.projectPagesOrder[projectId] || fallbackPages),
-    ];
 
     const numActive = Number(activeIndex);
     const numOver = Number(overIndex);
 
-    if (
-      numActive >= 0 &&
-      numActive < currentPagesOrder.length &&
-      numOver >= 0 &&
-      numOver < currentPagesOrder.length
-    ) {
-      const [removed] = currentPagesOrder.splice(numActive, 1);
-      currentPagesOrder.splice(numOver, 0, removed);
+    // 🎯 1. UNIFIED PROJECT SORTING (Scope-Aware)
+    if (type === SidebarElement.Project) {
+      const existingOrder = userSortOrders[userId]?.globalProjectsOrder || [];
+
+      // 🎯 Step A: Get the order of ALL projects first, ensuring everything is tracked
+      const allProjectsOrder = [...existingOrder];
+      projects.forEach((p) => {
+        if (!allProjectsOrder.includes(p.id)) allProjectsOrder.push(p.id);
+      });
+
+      // 🎯 Step B: Filter down to ONLY the items visible in the active dragging section scope
+      const isGroupSection =
+        scopeOrProjectId === 'team' || scopeOrProjectId === DropZoneScope.Group;
+      const sectionProjects = projects.filter((p) =>
+        isGroupSection ? p.groupId !== null : p.groupId === null,
+      );
+
+      // Sort the sub-section projects by their current order so the indexes match the screen exactly!
+      const sortedSectionIds = sectionProjects
+        .sort(
+          (a, b) =>
+            allProjectsOrder.indexOf(a.id) - allProjectsOrder.indexOf(b.id),
+        )
+        .map((p) => p.id);
+
+      // 🎯 Step C: Perform the splice safely inside the section limits
+      if (
+        numActive >= 0 &&
+        numActive < sortedSectionIds.length &&
+        numOver >= 0 &&
+        numOver <= sortedSectionIds.length
+      ) {
+        const [movedId] = sortedSectionIds.splice(numActive, 1);
+
+        // Adjust boundary if dragging down past itself
+        const adjustedOver = numOver > numActive ? numOver - 1 : numOver;
+        sortedSectionIds.splice(adjustedOver, 0, movedId);
+
+        // 🎯 Step D: Re-weave the freshly sorted section IDs back into the master global track list
+        const finalGlobalOrder = allProjectsOrder.filter(
+          (id) => !sortedSectionIds.includes(id),
+        );
+
+        // Insert the sorted section subset back into the global list where the section originally belonged
+        const targetInsertIndex = allProjectsOrder.findIndex((id) =>
+          isGroupSection
+            ? projects.find((p) => p.id === id)?.groupId !== null
+            : projects.find((p) => p.id === id)?.groupId === null,
+        );
+
+        if (targetInsertIndex === -1) {
+          finalGlobalOrder.push(...sortedSectionIds);
+        } else {
+          finalGlobalOrder.splice(targetInsertIndex, 0, ...sortedSectionIds);
+        }
+
+        set({
+          userSortOrders: {
+            ...userSortOrders,
+            [userId]: {
+              ...(userSortOrders[userId] || { projectPagesOrder: {} }),
+              globalProjectsOrder: finalGlobalOrder,
+            },
+          },
+        });
+      }
+      return;
+    }
+
+    // 🎯 2. UNIFIED PAGE SORTING (Stays exactly the same)
+    if (type === SidebarElement.Page && scopeOrProjectId) {
+      const fallbackPages = (pages[scopeOrProjectId] || []).map((p) => p.id);
+      const userRoot = userSortOrders[userId] || {
+        globalProjectsOrder: [],
+        projectPagesOrder: {},
+      };
+      const currentPagesOrder = [
+        ...(userRoot.projectPagesOrder[scopeOrProjectId] || fallbackPages),
+      ];
+
+      if (
+        numActive >= 0 &&
+        numActive < currentPagesOrder.length &&
+        numOver >= 0 &&
+        numOver <= currentPagesOrder.length
+      ) {
+        const [removed] = currentPagesOrder.splice(numActive, 1);
+        currentPagesOrder.splice(numOver, 0, removed);
+      }
 
       set({
         userSortOrders: {
@@ -333,7 +372,7 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
             ...userRoot,
             projectPagesOrder: {
               ...userRoot.projectPagesOrder,
-              [projectId]: currentPagesOrder,
+              [scopeOrProjectId]: currentPagesOrder,
             },
           },
         },

@@ -1,24 +1,11 @@
 import React from 'react';
-import {
-  LuActivity,
-  LuClock,
-  LuFileText,
-  LuLayers,
-  LuSquareCheck,
-} from 'react-icons/lu';
+import { LuClock, LuFileText, LuLayers, LuSquareCheck } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
-
-interface WorkspaceLog {
-  id: string;
-  message: string;
-  timestamp: string;
-  type: 'success' | 'info' | 'warning';
-}
+import WorkspaceLogs from '../WorkspaceLogs';
 
 export const ProjectDashboardView: React.FC = () => {
-  // 🎯 Cleaned: setWorkspaceViewMode is completely gone. Pure reactive layout reading.
   const projects = useProjectStore((state) => state.projects);
   const pages = useProjectStore((state) => state.pages);
 
@@ -31,28 +18,6 @@ export const ProjectDashboardView: React.FC = () => {
   const project = projects.find((p) => p.id === projectId);
   const projectPages = projectId ? pages[projectId] || [] : [];
 
-  const statusDotColors = {
-    success: 'bg-emerald-500',
-    info: 'bg-blue-500',
-    warning: 'bg-amber-500',
-  };
-
-  const dummyLogs: WorkspaceLog[] = [
-    {
-      id: 'log-1',
-      message: 'Project workspace initialized',
-      timestamp: 'Just now',
-      type: 'success',
-    },
-    {
-      id: 'log-2',
-      message: 'Sidebar architecture optimized',
-      timestamp: 'A few minutes ago',
-      type: 'info',
-    },
-  ];
-
-  // 🎯 Pure Router Navigation: No background state configuration side-effects
   const handleRouteToRoadmap = () => {
     navigate(paths.projectRoadmap(namespace || 'ADParris', projectId!));
   };
@@ -102,7 +67,6 @@ export const ProjectDashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* Interactive gateway card */}
             <div
               onClick={handleRouteToRoadmap}
               className="group relative bg-slate-900/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-slate-900/60 transition-all duration-200 rounded-xl p-5 flex flex-col justify-between cursor-pointer select-none min-h-25.5"
@@ -174,29 +138,8 @@ export const ProjectDashboardView: React.FC = () => {
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* Activity / Feed Stream Panel */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 h-full min-h-80">
-            <div className="flex items-center space-x-2 text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 border-b border-slate-800/80 pb-3">
-              <LuActivity className="w-4 h-4 text-emerald-400" />
-              <span>Workspace Logs</span>
-            </div>
-
-            <div className="space-y-4">
-              {dummyLogs.map((log) => (
-                <div key={log.id} className="flex space-x-3 text-xs">
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${statusDotColors[log.type]}`}
-                  />
-                  <div>
-                    <p className="text-slate-300 font-medium">{log.message}</p>
-                    <p className="text-slate-500 text-[10px] mt-0.5">
-                      {log.timestamp}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* 🎯 THE REFACTOR PAYOFF: Pure component extraction hook! */}
+          <WorkspaceLogs projectId={projectId!} />
         </div>
       </div>
     </div>

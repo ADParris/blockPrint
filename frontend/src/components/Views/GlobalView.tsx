@@ -76,32 +76,15 @@ const GlobalView: React.FC = () => {
       ? pages[projectId].find((p) => p.id === pageId)
       : null;
 
+  // 🎯 1. Handle normal Left Clicks (Unselecting and clicking empty space)
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (resolvedViewMode !== WorkspaceViewMode.PageDocument) {
-      return;
-    }
+    if (resolvedViewMode !== WorkspaceViewMode.PageDocument) return;
 
     const target = e.target as HTMLElement;
 
-    if (target.closest('[data-drag-handle-for]')) {
-      const dragHandle = target.closest('[data-drag-handle-for]');
-      if (dragHandle) {
-        const targetBlockId = dragHandle.getAttribute('data-drag-handle-for');
-        if (targetBlockId) {
-          e.stopPropagation();
-          setActiveBlockId(targetBlockId);
-
-          const rect = dragHandle.getBoundingClientRect();
-          const top = rect.bottom + 4;
-          const left = rect.left;
-
-          openMenu(CommandMenus.BlockCommand, { top, left });
-          return;
-        }
-      }
-    }
-
+    // Skip handles, blocks, and formatting containers completely on standard clicks
     if (
+      target.closest('[data-drag-handle-for]') ||
       target.closest('[data-block-id]') ||
       target.closest('.group\\/code') ||
       target.closest('.header-group')
@@ -117,16 +100,11 @@ const GlobalView: React.FC = () => {
       return;
     }
 
-    if (
-      resolvedViewMode === WorkspaceViewMode.PageDocument &&
-      projectId &&
-      pageId &&
-      activePage
-    ) {
+    // (Keep your existing click-below-last-block logic untouched right here...)
+    if (projectId && pageId && activePage) {
       const pElements =
         containerRef.current?.querySelectorAll('[data-block-id]');
       const lastBlock = pElements?.[pElements.length - 1];
-
       let isClickingBelowLastBlock = false;
       if (lastBlock) {
         const lastBlockRect = lastBlock.getBoundingClientRect();
@@ -142,16 +120,72 @@ const GlobalView: React.FC = () => {
           activePage.blocks.length,
         );
         setActiveBlockId(newBlockId);
-
         setTimeout(() => {
           const nextTextarea = containerRef.current?.querySelector(
             `textarea[data-block-id="${newBlockId}"]`,
           ) as HTMLTextAreaElement;
-          if (nextTextarea) {
-            nextTextarea.focus();
-            nextTextarea.setSelectionRange(0, 0);
-          }
+          if (nextTextarea) nextTextarea.focus();
         }, 50);
+      }
+    }
+  };
+
+  // 🎯 2. Handle Right-Clicks on Drag Handles to open your Context Menu
+  const handleCanvasContextMenu = (e: React.MouseEvent) => {
+    if (resolvedViewMode !== WorkspaceViewMode.PageDocument) return;
+
+    const target = e.target as HTMLElement;
+
+    // 1. Try to find an explicit drag handle first
+    let dragHandle = target.closest('[data-drag-handle-for]');
+
+    // 🎯 HITBOX EXPANSION: If they missed the handle but right-clicked the block line wrapper itself
+    if (!dragHandle) {
+      const blockContainer = target.closest('[data-block-id]');
+      if (blockContainer) {
+        const blockId = blockContainer.getAttribute('data-block-id');
+        dragHandle = containerRef.current?.querySelector(
+          `[data-drag-handle-for="${blockId}"]`,
+        ) as HTMLElement | null;
+      }
+    }
+
+    if (dragHandle) {
+      e.preventDefault(); // 🛑 Bye-bye browser default menu!
+      e.stopPropagation();
+
+      const targetBlockId = dragHandle.getAttribute('data-drag-handle-for');
+      if (targetBlockId) {
+        setActiveBlockId(targetBlockId);
+
+        const rect = dragHandle.getBoundingClientRect();
+        const top = rect.bottom + 4;
+        const left = rect.left;
+
+        openMenu(CommandMenus.BlockCommand, { top, left });
+        return;
+      }
+    }
+
+    // 🎯 CATCH-ALL PROTECTION: Disable standard browser right-click anywhere on the document editor
+    // to avoid distracting the user with accidental native popups.
+    e.preventDefault();
+  };
+
+  // 🎯 3. Handle Left-Click Mouse Down on Handles to allow Drag-And-Drop setups to wake up
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    if (resolvedViewMode !== WorkspaceViewMode.PageDocument) return;
+
+    const target = e.target as HTMLElement;
+    const dragHandle = target.closest('[data-drag-handle-for]');
+
+    // Only intercept if it's a left click on a drag handle
+    if (dragHandle && e.button === 0) {
+      const targetBlockId = dragHandle.getAttribute('data-drag-handle-for');
+      if (targetBlockId) {
+        setActiveBlockId(targetBlockId);
+        // 💡 Notice we do NOT call e.stopPropagation() here!
+        // This lets your HTML5 draggable/reorder engine deeper inside DocumentCanvas see the event!
       }
     }
   };
@@ -245,6 +279,8 @@ const GlobalView: React.FC = () => {
           tabIndex={0}
           onKeyDown={handleKeyDown}
           onClick={handleCanvasClick}
+          onMouseDown={handleCanvasMouseDown} // 👈 Wakes up block selection without breaking drags
+          onContextMenu={handleCanvasContextMenu} // 👈 Overrides right-click on handles perfectly
         >
           {renderMainContent()}
 

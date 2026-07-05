@@ -22,9 +22,15 @@ interface BlockProps {
   projectId: string;
   pageId: string;
   block: CanvasBlock;
+  index: number; // Optional index for ordered lists
 }
 
-const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
+const BlockRenderer: React.FC<BlockProps> = ({
+  projectId,
+  pageId,
+  block,
+  index,
+}) => {
   const updateBlockContent = useProjectStore(
     (state) => state.updateBlockContent,
   );
@@ -52,7 +58,12 @@ const BlockRenderer: React.FC<BlockProps> = ({ projectId, pageId, block }) => {
   }, [block.content, block.type]);
 
   const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', block.id);
+    // 🎯 Pack the numerical index position straight into the event transfer!
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.setData(
+      `application/x-${block.type.toLowerCase()}`,
+      String(index),
+    );
     e.dataTransfer.effectAllowed = 'move';
   };
 

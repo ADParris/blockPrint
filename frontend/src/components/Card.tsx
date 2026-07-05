@@ -86,11 +86,27 @@ const Card: React.FC<CardProps> = ({
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (viewContext === WorkspaceViewMode.PageKanban && block) {
+      e.dataTransfer.setData('text/plain', block.id);
+      // 🎯 Set custom mime-type token
+      e.dataTransfer.setData('application/x-drag-block', 'true');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+
   return (
     <div
       onClick={handleCardClick}
       style={dynamicStyle}
       data-canvas-block-id={isCanvas ? block?.id : undefined}
+      data-kanban-block-id={
+        viewContext === WorkspaceViewMode.PageKanban ? block?.id : undefined
+      }
+      draggable={
+        viewContext === WorkspaceViewMode.PageKanban && !isDraggingCanvas
+      }
+      onDragStart={handleDragStart}
       className={`${baseClasses} ${contextClasses[viewContext]}`}
     >
       {isCanvas && (

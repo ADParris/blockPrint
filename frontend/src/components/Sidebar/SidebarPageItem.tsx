@@ -1,8 +1,8 @@
 // src/components/Sidebar/SidebarPageItem.tsx
 import React from 'react';
 import { LuFileText } from 'react-icons/lu';
-import type { Page } from '../../state/types';
-import DropZone from '../DropZone';
+import { SidebarElement, type Page } from '../../state/types';
+import { useProjectStore } from '../../state/useProjectStore';
 
 interface SidebarPageItemProps {
   page: Page;
@@ -12,23 +12,25 @@ interface SidebarPageItemProps {
   isMenuOpen: boolean;
   onPageClick: () => void;
   onMenuToggle: (e: React.MouseEvent) => void;
-  onDrop: (activeId: string, targetIndex: number) => void;
 }
 
 export const SidebarPageItem: React.FC<SidebarPageItemProps> = ({
   page,
   index,
-  isLast,
   isPageActive,
   isMenuOpen,
   onPageClick,
   onMenuToggle,
-  onDrop,
 }) => {
+  const setActiveSidebarDrag = useProjectStore(
+    (state) => state.setActiveSidebarDrag,
+  );
   return (
-    <div className="group relative flex flex-col w-full">
-      <DropZone index={index} size="sm" onDropBlock={onDrop} />
-
+    // 🎯 Use data-sidebar-item-id attribute on the outer row for accurate bounds matching
+    <div
+      data-sidebar-item-id={String(index)}
+      className="group relative flex flex-col w-full"
+    >
       <div className="relative flex items-center w-full min-h-7 my-0.5">
         <button
           onClick={onPageClick}
@@ -41,11 +43,16 @@ export const SidebarPageItem: React.FC<SidebarPageItemProps> = ({
           <span
             data-drag-handle-for={page.id}
             draggable="true"
-            // 🎯 The missing link: package the page ID into the browser's drag payload
             onDragStart={(e) => {
-              // 🎯 Pass the numeric array index (as a string string) instead of the page UUID
+              e.stopPropagation(); // Stop bubbling up to the Project drag handlers!
               e.dataTransfer.setData('text/plain', String(index));
+              // 🎯 Set explicit mime-type isolation token for pages
+              e.dataTransfer.setData('application/x-page', String(index));
               e.dataTransfer.effectAllowed = 'move';
+              setActiveSidebarDrag(SidebarElement.Page, null); // Set the active drag object type in the store
+            }}
+            onDragEnd={() => {
+              setActiveSidebarDrag(null, null); // Reset the active drag object type and scope in the store
             }}
             className="flex items-center shrink-0 mr-2 cursor-grab text-slate-600 hover:text-slate-400 active:cursor-grabbing"
           >
@@ -71,8 +78,6 @@ export const SidebarPageItem: React.FC<SidebarPageItemProps> = ({
           </button>
         </div>
       </div>
-
-      {isLast && <DropZone index={index + 1} size="sm" onDropBlock={onDrop} />}
     </div>
   );
 };

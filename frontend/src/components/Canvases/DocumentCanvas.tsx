@@ -5,6 +5,7 @@ import { useProjectStore } from '../../state/useProjectStore';
 import BlockRenderer from '../BlockRenderer';
 import PageHeader from '../PageHeader';
 import SortableList from '../SortableList';
+import { BaseElement } from '../../state/types';
 
 const DocumentCanvas: React.FC = () => {
   // 🎯 1. Extract context directly from URL parameter strings
@@ -14,7 +15,7 @@ const DocumentCanvas: React.FC = () => {
   }>();
   const location = useLocation();
 
-  // 🎯 2. Atomic Selector Subscriptions (Prevents unnecessary re-renders)
+  // 🎯 2. Atomic Selector Subscriptions
   const pages = useProjectStore((state) => state.pages);
   const moveBlockToIndex = useProjectStore((state) => state.moveBlockToIndex);
   const setActiveBlockId = useProjectStore((state) => state.setActiveBlockId);
@@ -30,25 +31,21 @@ const DocumentCanvas: React.FC = () => {
 
   // 🎯 4. Auto-Scroll Listener Engine
   useEffect(() => {
-    // Look for incoming target hash references (e.g., #block-1782864...)
     if (location.hash && location.hash.startsWith('#block-')) {
       const targetId = location.hash.replace('#', '');
 
-      // Give SortableList/BlockRenderer a micro-task tick to ensure the DOM is painted
       const scrollTimeout = setTimeout(() => {
         const element = document.getElementById(targetId);
 
         if (element) {
           element.scrollIntoView({
             behavior: 'smooth',
-            block: 'center', // Centers the text node perfectly on the viewport axis
+            block: 'center',
           });
 
-          // Focus the block active id state inside Zustand automatically
           const dynamicBlockId = targetId.replace('block-', '');
           setActiveBlockId(dynamicBlockId);
 
-          // Spark a smooth visual ring to guide the writer's eye
           element.classList.add(
             'ring-2',
             'ring-sky-500/20',
@@ -67,7 +64,7 @@ const DocumentCanvas: React.FC = () => {
     }
   }, [location.hash, setActiveBlockId]);
 
-  // 5. Guard Gate! Safe structural fallback if no page matches the route path
+  // 5. Guard Gate! Safe structural fallback
   if (!projectId || !pageId || !activePage) {
     return (
       <div className="flex h-full items-center justify-center text-slate-400">
@@ -94,7 +91,6 @@ const DocumentCanvas: React.FC = () => {
     const text = target.value;
 
     if (blockId) {
-      // 🎯 Pass explicit context downstream to the decoupled action
       updateBlockContent(projectId, pageId, blockId, text);
     }
   };
@@ -108,17 +104,25 @@ const DocumentCanvas: React.FC = () => {
       >
         <PageHeader projectId={projectId} page={activePage} />
 
+        {/* 🎯 Updated SortableList: Let generics infer T from activePage.blocks */}
         <SortableList
           items={activePage.blocks}
-          // 🎯 Currying the project and page IDs straight into our reorder action
-          onMoveItem={(activeId, targetIndex) =>
-            moveBlockToIndex(projectId, pageId, activeId, targetIndex)
-          }
-          renderItem={(block) => (
+          projectId={projectId}
+          dragType={BaseElement.Block} // 🎯 Explicitly specify the drag type for blocks
+          onMoveItem={(sourceIndex, targetIndex) => {
+            // 🎯 Find the actual string ID using the source number index
+            const targetBlock = activePage.blocks[sourceIndex];
+            if (!targetBlock) return;
+
+            // 🎯 Pass the correct string ID into your store action!
+            moveBlockToIndex(projectId, pageId, targetBlock.id, targetIndex);
+          }}
+          renderItem={(block, index) => (
             <BlockRenderer
               projectId={projectId}
               pageId={pageId}
               block={block}
+              index={index}
             />
           )}
         />

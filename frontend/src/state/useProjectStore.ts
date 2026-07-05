@@ -42,6 +42,8 @@ export const useProjectStore = create<ProjectState>()(
       activeBlockId: '',
       isLoading: true, // Remains true until local hydration finishes
       imageCache: {},
+      activeSidebarDragObject: null,
+      activeSidebarDragScope: null,
 
       ...createProjectSlice(set, get),
       ...createCanvasSlice(set, get),
@@ -153,7 +155,7 @@ let syncTimeout: ReturnType<typeof setTimeout> | undefined;
 let lastSavedPagesJson = '';
 
 useProjectStore.subscribe((state) => {
-  // If we are actively booting or have no data layers, don't write empty states out to disk
+  // 🎯 THE FIX: Do not track baselines or schedule syncs while the data layer is booting up
   if (state.isLoading) return;
 
   const targetStateToSync = {
@@ -164,10 +166,12 @@ useProjectStore.subscribe((state) => {
   };
   const currentJson = JSON.stringify(targetStateToSync);
 
+  // 🎯 THE FIX: Catch the fresh post-hydration state cleanly right here
   if (!lastSavedPagesJson) {
     lastSavedPagesJson = currentJson;
     return;
   }
+
   if (currentJson === lastSavedPagesJson) return;
 
   lastSavedPagesJson = currentJson;

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { LuUser, LuUsers } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BaseElement, type Project } from '../../state/types';
+import { DropZoneScope, SidebarElement, type Project } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 import DropZone from '../DropZone';
@@ -29,9 +29,6 @@ const Sidebar = () => {
 
   const addProject = useProjectStore((state) => state.addProject);
   const addPage = useProjectStore((state) => state.addPage);
-  const reorderSidebarItems = useProjectStore(
-    (state) => state.reorderSidebarItems,
-  );
   const deleteProject = useProjectStore((state) => state.deleteProject);
   const deletePage = useProjectStore((state) => state.deletePage);
 
@@ -96,7 +93,7 @@ const Sidebar = () => {
 
     if (confirmed) {
       const targetNamespace = namespace || currentUser?.name || 'ADParris';
-      if (type === BaseElement.Project) {
+      if (type === SidebarElement.Project) {
         deleteProject(targetId);
         if (projectId === targetId) navigate(`/${targetNamespace}`);
       } else {
@@ -147,84 +144,72 @@ const Sidebar = () => {
             icon={LuUser}
             onActionClick={() => handleCreateProject(null)}
           />
-          <div className="space-y-1 relative w-full">
+
+          <div className="flex flex-col w-full text-left justify-start items-start">
             {personalProjects.length === 0 ? (
               <div className="text-xs text-slate-600 pl-2 italic py-1">
                 No projects found
               </div>
             ) : (
-              <>
-                {personalProjects.map((project, index) => {
-                  const projectPages = pages[project.id] || [];
-                  const pageOrder =
-                    userRootOrder?.projectPagesOrder[project.id] || [];
-                  const sortedPages = [...projectPages].sort((a, b) => {
-                    const aIndex = pageOrder.indexOf(a.id);
-                    const bIndex = pageOrder.indexOf(b.id);
-                    return aIndex - bIndex;
-                  });
+              personalProjects.map((project, index) => {
+                const projectPages = pages[project.id] || [];
+                const pageOrder =
+                  userRootOrder?.projectPagesOrder[project.id] || [];
+                const sortedPages = [...projectPages].sort((a, b) => {
+                  const aIndex = pageOrder.indexOf(a.id);
+                  const bIndex = pageOrder.indexOf(b.id);
+                  return aIndex - bIndex;
+                });
 
-                  return (
-                    <React.Fragment key={project.id}>
-                      <DropZone
-                        index={index}
-                        size="sm"
-                        onDropBlock={(activeId) =>
-                          reorderSidebarItems(
-                            null,
-                            activeId,
-                            project.id,
-                            BaseElement.Project,
-                          )
-                        }
-                      />
+                return (
+                  <React.Fragment key={project.id}>
+                    {/* 🎯 Gap drop zone directly BEFORE this entry row */}
+                    <DropZone
+                      index={index}
+                      acceptedType={SidebarElement.Project}
+                      projectId={null}
+                      scope={DropZoneScope.Personal}
+                    />
+
+                    <div className="w-full text-left">
                       <SidebarProjectItem
                         project={project}
+                        index={index}
                         targetNamespace={currentUser?.name || 'ADParris'}
                         activeProjectId={projectId || null}
                         activePageId={pageId || null}
                         sortedPages={sortedPages}
+                        section={DropZoneScope.Personal}
                         isMenuOpen={
                           activeMenu?.targetId === project.id &&
-                          activeMenu?.type === BaseElement.Project
+                          activeMenu?.type === SidebarElement.Project
                         }
                         onCreatePageClick={(e) =>
                           handleCreatePage(e, project.id)
                         }
                         onMenuToggle={(e) =>
-                          handleMenuClick(e, project.id, BaseElement.Project)
+                          handleMenuClick(e, project.id, SidebarElement.Project)
                         }
                         onPageMenuToggle={(e, targetPageId) =>
-                          handleMenuClick(e, targetPageId, 'BLOCK_RECON_PAGE')
-                        }
-                        onReorderPages={(activeIndex, overIndex) =>
-                          reorderSidebarItems(
-                            project.id,
-                            activeIndex,
-                            overIndex,
-                            BaseElement.Page,
-                          )
+                          handleMenuClick(e, targetPageId, SidebarElement.Page)
                         }
                         activeMenuTargetId={activeMenu?.targetId}
                         activeMenuType={activeMenu?.type}
                       />
-                    </React.Fragment>
-                  );
-                })}
+                    </div>
 
-                <DropZone
-                  index={personalProjects.length}
-                  size="sm"
-                  onDropBlock={(activeId) =>
-                    reorderSidebarItems(
-                      null,
-                      activeId,
-                      'APPEND_PERSONAL',
-                      BaseElement.Project,
-                    )
-                  }
-                />
-              </>
+                    {/* 🎯 Final trailing target at the direct baseline end of loop */}
+                    {index === personalProjects.length - 1 && (
+                      <DropZone
+                        index={index + 1} // 🎯 FIX: Changed index to index + 1 for clean append placement
+                        acceptedType={SidebarElement.Project}
+                        projectId={null}
+                        scope={DropZoneScope.Personal}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </div>
         </div>
@@ -236,7 +221,8 @@ const Sidebar = () => {
             icon={LuUsers}
             onActionClick={() => handleCreateProject('group_design_team')}
           />
-          <div className="space-y-1 relative w-full">
+
+          <div className="flex flex-col w-full text-left justify-start items-start">
             {groupProjects.length === 0 ? (
               <div className="text-xs text-slate-600 pl-2 italic py-1">
                 No group workspaces active
@@ -260,59 +246,48 @@ const Sidebar = () => {
 
                 return (
                   <React.Fragment key={project.id}>
+                    {/* 🎯 Gap drop zone directly BEFORE this entry row */}
                     <DropZone
                       index={index}
-                      size="sm"
-                      onDropBlock={(activeId) =>
-                        reorderSidebarItems(
-                          'group_design_team',
-                          activeId,
-                          project.id,
-                          BaseElement.Project,
-                        )
-                      }
+                      acceptedType={SidebarElement.Project}
+                      projectId={null}
+                      scope={DropZoneScope.Group}
                     />
-                    <SidebarProjectItem
-                      key={project.id}
-                      project={project}
-                      targetNamespace={projectNamespace}
-                      activeProjectId={projectId || null}
-                      activePageId={pageId || null}
-                      sortedPages={sortedPages}
-                      isMenuOpen={
-                        activeMenu?.targetId === project.id &&
-                        activeMenu?.type === BaseElement.Project
-                      }
-                      onCreatePageClick={(e) => handleCreatePage(e, project.id)}
-                      onMenuToggle={(e) =>
-                        handleMenuClick(e, project.id, BaseElement.Project)
-                      }
-                      onPageMenuToggle={(e, targetPageId) =>
-                        handleMenuClick(e, targetPageId, 'BLOCK_RECON_PAGE')
-                      }
-                      onReorderPages={(activeIndex, overIndex) =>
-                        reorderSidebarItems(
-                          project.id,
-                          activeIndex,
-                          overIndex,
-                          BaseElement.Page,
-                        )
-                      }
-                      activeMenuTargetId={activeMenu?.targetId}
-                      activeMenuType={activeMenu?.type}
-                    />
+
+                    <div className="w-full text-left">
+                      <SidebarProjectItem
+                        project={project}
+                        index={index}
+                        targetNamespace={projectNamespace}
+                        activeProjectId={projectId || null}
+                        activePageId={pageId || null}
+                        sortedPages={sortedPages}
+                        section={DropZoneScope.Group}
+                        isMenuOpen={
+                          activeMenu?.targetId === project.id &&
+                          activeMenu?.type === SidebarElement.Project
+                        }
+                        onCreatePageClick={(e) =>
+                          handleCreatePage(e, project.id)
+                        }
+                        onMenuToggle={(e) =>
+                          handleMenuClick(e, project.id, SidebarElement.Project)
+                        }
+                        onPageMenuToggle={(e, targetPageId) =>
+                          handleMenuClick(e, targetPageId, SidebarElement.Page)
+                        }
+                        activeMenuTargetId={activeMenu?.targetId}
+                        activeMenuType={activeMenu?.type}
+                      />
+                    </div>
+
+                    {/* 🎯 Final trailing target at the direct baseline end of loop */}
                     {index === groupProjects.length - 1 && (
                       <DropZone
-                        index={index + 1}
-                        size="sm"
-                        onDropBlock={(activeId) =>
-                          reorderSidebarItems(
-                            'group_design_team',
-                            activeId,
-                            'APPEND_GROUP',
-                            BaseElement.Project,
-                          )
-                        }
+                        index={index + 1} // 🎯 FIX: Changed index to index + 1 for clean append placement
+                        acceptedType={SidebarElement.Project}
+                        projectId={null}
+                        scope={DropZoneScope.Group}
                       />
                     )}
                   </React.Fragment>
@@ -339,7 +314,9 @@ const Sidebar = () => {
             >
               <span>
                 Delete{' '}
-                {activeMenu.type === BaseElement.Project ? 'Project' : 'Page'}
+                {activeMenu.type === SidebarElement.Project
+                  ? SidebarElement.Project
+                  : SidebarElement.Page}
               </span>
             </button>
           </div>

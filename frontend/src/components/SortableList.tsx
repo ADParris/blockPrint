@@ -1,28 +1,58 @@
-import React, { Fragment } from 'react';
+// src/components/SortableList.tsx
+import React from 'react';
+import { type BaseElementType } from '../state/types';
 import DropZone from './DropZone';
 
 interface SortableListProps<T> {
   items: T[];
-  onMoveItem: (activeId: string, targetIndex: number) => void;
   renderItem: (item: T, index: number) => React.ReactNode;
+  projectId: string | null;
+  // 1. Explicitly accept the drag type here
+  dragType: BaseElementType;
+  onMoveItem?: (sourceIndex: number, targetIndex: number) => void;
 }
 
-// 💡 Using a generic <T extends { id: string }> ensures it works with Blocks or Notebooks!
 function SortableList<T extends { id: string }>({
   items,
-  onMoveItem,
   renderItem,
+  projectId,
+  dragType, // 2. Pull it from props
+  onMoveItem,
 }: SortableListProps<T>) {
+  const isBlock = dragType === 'BLOCK';
+
   return (
-    <>
-      <DropZone index={0} onDropBlock={onMoveItem} />
-      {items.map((item, index) => (
-        <Fragment key={item.id}>
-          {renderItem(item, index)}
-          <DropZone index={index + 1} onDropBlock={onMoveItem} />
-        </Fragment>
-      ))}
-    </>
+    <div className="flex flex-col w-full text-left">
+      {items.length === 0 ? (
+        <div className="text-xs text-slate-600 pl-2 italic py-2">
+          No items found
+        </div>
+      ) : (
+        items.map((item, index) => (
+          <React.Fragment key={item.id}>
+            <DropZone
+              index={index}
+              acceptedType={dragType}
+              projectId={projectId}
+              size={isBlock ? 'sm' : 'md'}
+              onCustomDrop={onMoveItem}
+            />
+
+            <div className="w-full text-left">{renderItem(item, index)}</div>
+
+            {index === items.length - 1 && (
+              <DropZone
+                index={index + 1}
+                acceptedType={dragType}
+                projectId={projectId}
+                size={isBlock ? 'sm' : 'md'}
+                onCustomDrop={onMoveItem}
+              />
+            )}
+          </React.Fragment>
+        ))
+      )}
+    </div>
   );
 }
 

@@ -2,11 +2,13 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  BaseElement,
   type CanvasBlock,
   type ProgressState,
   WorkspaceViewMode,
 } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
+import { paths } from '../../utils/routes';
 import Card from '../Card';
 import { KanbanBoard } from '../KanbanBoard';
 import BlockPreviewRenderer from '../Previews/BlockPreviewRenderer';
@@ -25,17 +27,15 @@ export const PageBlockKanbanView: React.FC = () => {
     pageId: string;
   }>();
 
-  // 🎯 Use the decoupled selectors built directly into your store interface
   const getPageBlocks = useProjectStore((state) => state.getPageBlocks);
   const moveBlockInKanban = useProjectStore((state) => state.moveBlockInKanban);
 
   const targetNamespace = namespace || 'ADParris';
+  const targetProjectId = projectId || 'default-project';
 
   const handleOnBackClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    navigate(
-      `/${targetNamespace}/projects/${projectId}/pages/${pageId}/canvas`,
-    );
+    navigate(paths.projectRoadmap(targetNamespace, targetProjectId));
   };
 
   return (
@@ -43,11 +43,10 @@ export const PageBlockKanbanView: React.FC = () => {
       title="Canvas Block Pipeline"
       subtitle="Organize, prioritize, and process individual visual elements across production lanes."
       columns={COLUMNS}
-      // 🎯 Pull blocks using your decoupled store layout helper
+      elementType={BaseElement.Block} // 🎯 Supply the element type boundary here!
       itemsByColumn={(columnId) =>
         getPageBlocks(projectId, pageId, columnId as ProgressState)
       }
-      // 🎯 Commit structural relocations cleanly via the block pipeline selector
       onMoveItem={(blockId, targetColumnId, targetIndex) =>
         moveBlockInKanban(
           projectId,
