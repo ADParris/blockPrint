@@ -1,4 +1,5 @@
 // src/components/BlockCommandMenu.tsx
+import React from 'react';
 import type { BlockType } from '../../state/types';
 import { useModalStore } from '../../state/useModalStore';
 import { useProjectStore } from '../../state/useProjectStore';
@@ -21,21 +22,28 @@ const BlockCommandMenu: React.FC<BlockCommandMenuProps> = ({
   const deleteBlock = useProjectStore((state) => state.deleteBlock);
   const updateBlockType = useProjectStore((state) => state.updateBlockType);
   const activeBlockId = useProjectStore((state) => state.activeBlockId);
+  const addActivityFeedItem = useProjectStore(
+    (state) => state.addActivityFeedItem,
+  );
   const closeMenu = useModalStore((state) => state.closeMenu);
+
+  // 🎯 Extract the content of the active block so we can pass it to our timeline
+  const activeBlockContent = useProjectStore((state) => {
+    if (!projectId || !pageId || !activeBlockId) return '';
+    const projectPages = state.pages[projectId] || [];
+    const activePage = projectPages.find((p) => p.id === pageId);
+    const activeBlock = activePage?.blocks?.find((b) => b.id === activeBlockId);
+    return activeBlock?.content || '';
+  });
 
   const commands: CommandItem[] = [
     { label: 'Heading 1', labelStyle: 'font-bold', type: 'h1' },
     { label: 'Heading 2', labelStyle: 'font-semibold', type: 'h2' },
     { label: 'Heading 3', labelStyle: 'font-medium', type: 'h3' },
     { label: 'Paragraph', labelStyle: '', type: 'p' },
-    // 🎯 New List Item Options
     { label: '• Bullet List', labelStyle: 'text-slate-200', type: 'bullet' },
     { label: '1. Numbered List', labelStyle: 'text-slate-200', type: 'number' },
-    {
-      label: 'Code Block',
-      labelStyle: 'text-emerald-400',
-      type: 'code',
-    },
+    { label: 'Code Block', labelStyle: 'text-emerald-400', type: 'code' },
     {
       label: 'Image Block',
       labelStyle: 'text-indigo-400 font-medium',
@@ -47,6 +55,21 @@ const BlockCommandMenu: React.FC<BlockCommandMenuProps> = ({
     if (activeBlockId) {
       updateBlockType(projectId, pageId, activeBlockId, type);
     }
+    closeMenu();
+  };
+
+  // 🎯 Handle transforming block text into Context Feed Timeline notifications
+  const handleTimelinePush = (feedType: 'STUB' | 'NOTE') => {
+    if (!projectId || !pageId || !activeBlockId) return;
+
+    // Fallback if the user right-clicked an empty block element
+    const contentPayload =
+      activeBlockContent.trim() || `Blank layout reference block location.`;
+
+    addActivityFeedItem(projectId, contentPayload, feedType, {
+      pageId,
+      blockId: activeBlockId,
+    });
 
     closeMenu();
   };
@@ -69,6 +92,23 @@ const BlockCommandMenu: React.FC<BlockCommandMenuProps> = ({
           {command.label}
         </div>
       ))}
+
+      {/* 🎯 Timeline Action Block Section Segment */}
+      <div className="h-px bg-slate-800/60 my-1 mx-1" />
+
+      <div
+        onClick={() => handleTimelinePush('NOTE')}
+        className="w-full text-left px-3 py-2.5 hover:bg-slate-800/80 text-sky-400 rounded-md transition-colors cursor-pointer text-sm font-medium"
+      >
+        📝 Send Note to Timeline
+      </div>
+
+      <div
+        onClick={() => handleTimelinePush('STUB')}
+        className="w-full text-left px-3 py-2.5 hover:bg-slate-800/80 text-amber-400 rounded-md transition-colors cursor-pointer text-sm font-medium"
+      >
+        📌 Convert to Task Stub
+      </div>
 
       <div className="h-px bg-slate-800/60 my-1 mx-1" />
 

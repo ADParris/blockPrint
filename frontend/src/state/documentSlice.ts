@@ -119,9 +119,10 @@ export const createDocumentSlice: StoreSlice<DocumentActions> = (set, get) => ({
   },
 
   deleteBlock: (projectId, pageId, id) => {
-    const { pages, activeBlockId } = get();
+    const { pages, activeBlockId, activityFeedItems } = get();
     if (!projectId || !pageId || !pages[projectId]) return;
 
+    // 1. Process your existing block array filtering logic
     const updatedPages = pages[projectId].map((page) => {
       if (page.id !== pageId) return page;
       return {
@@ -135,10 +136,25 @@ export const createDocumentSlice: StoreSlice<DocumentActions> = (set, get) => ({
       };
     });
 
+    // 🎯 2. Clean up associated feed timeline items across slices
+    const existingFeed = activityFeedItems[projectId] || [];
+    const updatedFeed = existingFeed.filter(
+      (item) => item.targetBlockId !== id,
+    );
+
+    // 3. Dispatch the complete synchronized state transaction
     set({
       pages: { ...pages, [projectId]: updatedPages },
       activeBlockId: activeBlockId === id ? null : activeBlockId,
+      activityFeedItems: {
+        ...activityFeedItems,
+        [projectId]: updatedFeed,
+      },
     });
+
+    console.log(
+      `Successfully deleted block ${id} and synchronized context feed timeline filters.`,
+    );
   },
 
   moveBlockToIndex: (projectId, pageId, activeId, targetIndex) => {

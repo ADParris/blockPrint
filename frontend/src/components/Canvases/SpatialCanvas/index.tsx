@@ -1,7 +1,8 @@
+// src/components/Views/SpatialCanvas.tsx
 import React, { useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSpatialMouse } from '../../../hooks/useSpacialMouse';
-import { WorkspaceViewMode } from '../../../state/types';
+import { ActivityFeedItems, WorkspaceViewMode } from '../../../state/types'; // 🎯 Added ActivityFeedItems imports
 import { useProjectStore } from '../../../state/useProjectStore';
 import Card from '../../Card';
 import ConnectionLayer from './ConnectionLayer';
@@ -15,18 +16,34 @@ const SpatialCanvas: React.FC = () => {
   }>();
 
   const pages = useProjectStore((state) => state.pages);
+  // 🎯 Pull your independent activity feed dictionary to cross-reference
+  const activityFeedItems = useProjectStore((state) => state.activityFeedItems);
 
   const activePage =
     projectId && pageId && pages[projectId]
       ? pages[projectId].find((p) => p.id === pageId)
       : null;
 
+  // 🎯 FILTER LAYER: Filter notes and stubs completely out of spatial calculations & layout arrays
+  const targetProjectId = projectId || 'default-project';
+  const projectFeed = activityFeedItems[targetProjectId] || [];
+
+  const canvasBlocks = (activePage?.blocks ?? []).filter((block) => {
+    const isFeedItem = projectFeed.some(
+      (item) =>
+        item.targetBlockId === block.id &&
+        (item.type === ActivityFeedItems.Note ||
+          item.type === ActivityFeedItems.Stub),
+    );
+    return !isFeedItem; // Hide if it matches a timeline note or stub
+  });
+
   const { isDragActive, cameraOffset, zoomScale, mouseState, mouseHandlers } =
     useSpatialMouse({
       projectId,
       pageId,
       canvasRef,
-      blocks: activePage?.blocks ?? [],
+      blocks: canvasBlocks, // 🎯 Feed the filtered blocks to the hook
     });
 
   if (!activePage) return null;
@@ -48,13 +65,12 @@ const SpatialCanvas: React.FC = () => {
           transform: `translate(${cameraOffset.x}px, ${cameraOffset.y}px) scale(${zoomScale})`,
         }}
       >
-        {/* 🗺️ Native Grid Layer: Stays 100% of the viewport but zooms automatically with the stage */}
+        {/* Grid Background */}
         <svg
           id="grid-bg"
           className="absolute inset-0 w-full h-full pointer-events-none"
         >
           <defs>
-            {/* Hardcoded 40x40 grid. Let the browser handle scaling it natively! */}
             <pattern
               id="dot-grid"
               width={40}
@@ -70,19 +86,18 @@ const SpatialCanvas: React.FC = () => {
               />
             </pattern>
           </defs>
-          {/* Fill the infinite viewport area */}
           <rect width="100%" height="100%" fill="url(#dot-grid)" />
         </svg>
 
         {/* Dynamic Vector Lines Layer */}
         <ConnectionLayer
-          blocks={activePage.blocks}
+          blocks={canvasBlocks} // 🎯 Filtered
           connectingFromId={mouseState.connectingFromId}
           connectingDirection={mouseState.connectingDirection}
           mouseCanvasPos={mouseState.mouseCanvasPos}
         />
 
-        {/* 🚀 Selection Lasso Layer (Now safely inside world-space!) */}
+        {/* Lasso Layer */}
         {mouseState.isLassoActive && (
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
             <rect
@@ -100,21 +115,26 @@ const SpatialCanvas: React.FC = () => {
 
         {/* Card Component Wrapper Layer */}
         <div className="absolute inset-0 pointer-events-none z-10">
-          {activePage.blocks.map((block, index) => (
-            <Card
-              key={block.id}
-              viewContext={WorkspaceViewMode.PageCanvas}
-              block={block}
-              index={index}
-              isPanning={mouseState.isPanning}
-              isActiveDrag={mouseState.activeDragId === block.id}
-              isDraggingCanvas={isDragActive()}
-            />
-          ))}
+          {canvasBlocks.map(
+            (
+              block,
+              index, // 🎯 Filtered
+            ) => (
+              <Card
+                key={block.id}
+                viewContext={WorkspaceViewMode.PageCanvas}
+                block={block}
+                index={index}
+                isPanning={mouseState.isPanning}
+                isActiveDrag={mouseState.activeDragId === block.id}
+                isDraggingCanvas={isDragActive()}
+              />
+            ),
+          )}
         </div>
       </div>
 
-      {/* HUD Info (Stays fixed relative to browser screen) */}
+      {/* HUD Info */}
       <div className="absolute bottom-4 right-4 bg-slate-950/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-md text-xs text-slate-400 pointer-events-none z-30">
         Zoom: {Math.round(zoomScale * 100)}% | Pan: {Math.round(cameraOffset.x)}
         x, {Math.round(cameraOffset.y)}y

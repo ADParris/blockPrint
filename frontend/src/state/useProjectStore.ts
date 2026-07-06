@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { idbStorage } from '../api/idbStorage';
 import { projectApi } from '../api/projects';
+import { createActivityFeedSlice } from './activityFeedSlice';
 import { createCanvasSlice } from './canvasSlice';
 import { createDocumentSlice } from './documentSlice';
 import { createImageSlice } from './imageSlice';
@@ -35,7 +36,7 @@ export const useProjectStore = create<ProjectState>()(
       projects: [],
       pages: {},
       changeLog: {},
-      feedPosts: {},
+      activityFeedItems: {},
       userSortOrders: {},
 
       // --- UI States ---
@@ -50,6 +51,7 @@ export const useProjectStore = create<ProjectState>()(
       ...createDocumentSlice(set, get),
       ...createImageSlice(set, get),
       ...createKanbanSlice(set, get),
+      ...createActivityFeedSlice(set, get),
 
       // 🎯 PIPELINE BACKEND RESTORATION (Only runs if IndexedDB is blank)
       loadFromBackend: async () => {
@@ -64,6 +66,7 @@ export const useProjectStore = create<ProjectState>()(
               projects: myData.projects || [],
               pages: myData.pages || {},
               userSortOrders: myData.userSortOrders || {},
+              activityFeedItems: myData.activityFeedItems || {},
             });
             console.log(
               'Successfully re-seeded memory and IndexedDB from backup file.',
@@ -91,6 +94,7 @@ export const useProjectStore = create<ProjectState>()(
               projects: currentState.projects,
               pages: currentState.pages,
               userSortOrders: currentState.userSortOrders,
+              activityFeedItems: currentState.activityFeedItems,
             },
           };
 
@@ -111,7 +115,7 @@ export const useProjectStore = create<ProjectState>()(
         projects: state.projects,
         pages: state.pages,
         changeLog: state.changeLog,
-        feedPosts: state.feedPosts,
+        activityFeedItems: state.activityFeedItems,
         userSortOrders: state.userSortOrders,
         cameraOffset: state.cameraOffset,
         zoomScale: state.zoomScale,
@@ -163,6 +167,7 @@ useProjectStore.subscribe((state) => {
     pages: state.pages,
     groups: state.groups,
     userSortOrders: state.userSortOrders,
+    activityFeedItems: state.activityFeedItems,
   };
   const currentJson = JSON.stringify(targetStateToSync);
 

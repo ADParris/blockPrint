@@ -1,12 +1,7 @@
 import axios from 'axios';
-import type { Page, Project, UserProjectOrders } from '../state/types';
+import type { UserWorkspaceData } from '../state/types';
 
 // 1. Define the shape of a single user's backed-up workspace data
-export interface UserWorkspaceData {
-  projects: Project[];
-  pages: Record<string, Page[]>;
-  userSortOrders: Record<string, UserProjectOrders>;
-}
 
 // 2. Define the full payload shape (a dictionary of user IDs to their data)
 export type SaveWorkspacePayload = Record<string, UserWorkspaceData>;

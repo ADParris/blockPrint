@@ -2,6 +2,8 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  type ActivityFeedItem,
+  ActivityFeedItems,
   BaseElement,
   type CanvasBlock,
   type ProgressState,
@@ -33,6 +35,25 @@ export const PageBlockKanbanView: React.FC = () => {
   const targetNamespace = namespace || 'ADParris';
   const targetProjectId = projectId || 'default-project';
 
+  // 🎯 Clean and isolated single project timeline subscription
+  const projectFeed: ActivityFeedItem[] = useProjectStore(
+    (state) => state.activityFeedItems[targetProjectId] || [],
+  );
+
+  const filteredBlocks = (columnId: ProgressState) => {
+    return getPageBlocks(targetProjectId, pageId, columnId).filter((block) => {
+      // 🔍 Safely normalize strings to handle potential case discrepancies ('note' vs 'NOTE')
+      const isTimelineNote = projectFeed.some(
+        (item) =>
+          item.targetBlockId === block.id &&
+          item.type === ActivityFeedItems.Note,
+      );
+
+      // If it's a timeline note, hide it from the Kanban board!
+      return !isTimelineNote;
+    });
+  };
+
   const handleOnBackClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     navigate(paths.projectRoadmap(targetNamespace, targetProjectId));
@@ -43,10 +64,8 @@ export const PageBlockKanbanView: React.FC = () => {
       title="Canvas Block Pipeline"
       subtitle="Organize, prioritize, and process individual visual elements across production lanes."
       columns={COLUMNS}
-      elementType={BaseElement.Block} // 🎯 Supply the element type boundary here!
-      itemsByColumn={(columnId) =>
-        getPageBlocks(projectId, pageId, columnId as ProgressState)
-      }
+      elementType={BaseElement.Block}
+      itemsByColumn={(columnId) => filteredBlocks(columnId as ProgressState)}
       onMoveItem={(blockId, targetColumnId, targetIndex) =>
         moveBlockInKanban(
           projectId,
@@ -57,13 +76,15 @@ export const PageBlockKanbanView: React.FC = () => {
         )
       }
       onBack={handleOnBackClick}
-      renderCard={(block) => (
-        <Card viewContext={WorkspaceViewMode.PageKanban} block={block}>
-          <div className="max-h-24 overflow-hidden rounded-lg border border-slate-800/40 bg-slate-950/40 pointer-events-none">
-            <BlockPreviewRenderer block={block} />
-          </div>
-        </Card>
-      )}
+      renderCard={(block) => {
+        return (
+          <Card viewContext={WorkspaceViewMode.PageKanban} block={block}>
+            <div className="max-h-24 overflow-hidden rounded-lg border border-slate-800/40 bg-slate-950/40 pointer-events-none">
+              <BlockPreviewRenderer block={block} />
+            </div>
+          </Card>
+        );
+      }}
     />
   );
 };

@@ -73,6 +73,22 @@ const BlockRenderer: React.FC<BlockProps> = ({
     updateBlockContent(projectId, pageId, block.id, rawValue);
   };
 
+  const timelineItem = useProjectStore((state) => {
+    const feed = state.activityFeedItems[projectId] || [];
+    return feed.find((item) => item.targetBlockId === block.id);
+  });
+
+  // Determine status formatting strings
+  const isStub = timelineItem?.type === 'STUB';
+  const isNote = timelineItem?.type === 'NOTE';
+
+  // Generate dynamic border frames
+  const wrapperBorderClass = isStub
+    ? 'border-amber-500/50 shadow-amber-950/10'
+    : isNote
+      ? 'border-sky-500/50 shadow-sky-950/10'
+      : 'border-transparent';
+
   let elementToRender: React.ReactNode;
 
   if (block.type === 'code') {
@@ -216,11 +232,25 @@ const BlockRenderer: React.FC<BlockProps> = ({
   return (
     <div
       id={`block-${block.id}`}
-      className="group relative flex items-start w-full pl-8 pr-4 min-h-7"
+      className={`group relative flex flex-col items-start w-full pl-8 pr-4 min-h-7 py-2.5 my-1.5 rounded-lg border transition-all duration-200 ${wrapperBorderClass}`}
     >
+      {/* 🎯 CORNER BADGE ELEMENT: Only shows up if this block is linked to the feed */}
+      {timelineItem && (
+        <div
+          className={`absolute -top-2.5 right-4 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-wider uppercase select-none border shadow-sm z-10
+          ${
+            isStub
+              ? 'bg-amber-950/80 text-amber-400 border-amber-600/40'
+              : 'bg-sky-950/80 text-sky-400 border-sky-600/40'
+          }`}
+        >
+          {timelineItem.type}
+        </div>
+      )}
+
       {/* Drag Handle */}
       <div
-        className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group/handle group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 select-none  hover:z-50"
+        className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group/handle group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 select-none hover:z-50"
         contentEditable={false}
         data-drag-handle-for={block.id}
         draggable

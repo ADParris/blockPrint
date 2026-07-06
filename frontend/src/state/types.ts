@@ -1,5 +1,12 @@
 // src/state/types.ts
 
+export interface UserWorkspaceData {
+  projects: Project[];
+  pages: Record<string, Page[]>;
+  userSortOrders: Record<string, UserProjectOrders>;
+  activityFeedItems?: Record<string, ActivityFeedItem[]>;
+}
+
 // --- 1. Core Core Layout & Canvas Geometries (Preserved Exactly) ---
 export type AnchorDirection = 'top' | 'right' | 'bottom' | 'left';
 
@@ -96,14 +103,28 @@ export const WorkspaceViewMode = {
 export type WorkspaceViewModeType =
   (typeof WorkspaceViewMode)[keyof typeof WorkspaceViewMode];
 
-export interface FeedPost {
+export const ActivityFeedItems = {
+  Chat: 'CHAT',
+  Note: 'NOTE',
+  Stub: 'STUB',
+} as const;
+export type ActivityFeedItemsType =
+  (typeof ActivityFeedItems)[keyof typeof ActivityFeedItems];
+
+export interface ActivityFeedItem {
   id: string;
   projectId: string;
   userId: string;
   userName: string;
   content: string;
   timestamp: number;
-  likes: string[]; // Array of User IDs
+  type: ActivityFeedItemsType; // 💡 'chat' (team messaging), 'note' (general comment), or 'stub' (todo marker)
+  likes: string[];
+
+  // 🎯 Deep-linking context attributes
+  targetPageId?: string; // The ID of the page the note/stub belongs to
+  targetPageTitle?: string; // Cached title for rendering a readable context pill (e.g. "Fix this in [Page 2]")
+  targetBlockId?: string; // The exact block element to focus and warp to
 }
 
 export interface ChangeLogEntry {
@@ -215,7 +236,7 @@ export interface ProjectState {
   pages: Record<string, Page[]>;
   userSortOrders: Record<string, UserProjectOrders>;
   changeLog: Record<string, HistoryEntry[]>;
-  feedPosts: Record<string, FeedPost[]>;
+  activityFeedItems: Record<string, ActivityFeedItem[]>;
 
   // --- 2. Ephemeral UI & Active Selections ---
   activeBlockId: string | null;
@@ -357,7 +378,15 @@ export interface ProjectState {
     targetIndex: number,
   ) => void;
 
-  // --- 9. Core Sync Actions ---
+  // --- 9. Activity Feed Actions ---
+  addActivityFeedItem: (
+    projectId: string | undefined,
+    content: string,
+    type: ActivityFeedItemsType,
+    context?: { pageId?: string; pageTitle?: string; blockId?: string },
+  ) => void;
+
+  // --- 10. Core Sync Actions ---
   loadFromBackend: () => Promise<void>;
   syncToBackend: () => Promise<void>;
 }
