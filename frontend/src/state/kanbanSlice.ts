@@ -30,13 +30,18 @@ export interface KanbanActions {
   ) => void;
 }
 
+const EMPTY_PAGES_ARRAY: Page[] = [];
+const EMPTY_BLOCKS_ARRAY: CanvasBlock[] = [];
+
 export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
   // --- PROJECT LEVEL QUANTUM ---
   getProjectPages: (projectId, columnId) => {
     const { pages } = get();
-    if (!projectId) return [];
+    if (!projectId || !pages[projectId] || pages[projectId].length === 0) {
+      return EMPTY_PAGES_ARRAY; // 🎯 Returns the exact same reference every time
+    }
 
-    return (pages[projectId] || [])
+    return pages[projectId]
       .filter((page) => (page.kanban?.columnId || 'Pending') === columnId)
       .sort(
         (a, b) => (a.kanban?.orderIndex || 0) - (b.kanban?.orderIndex || 0),
@@ -91,12 +96,20 @@ export const createKanbanSlice: StoreSlice<KanbanActions> = (set, get) => ({
   // --- PAGE LEVEL QUANTUM (New) ---
   getPageBlocks: (projectId, pageId, columnId) => {
     const { pages } = get();
-    if (!projectId || !pageId) return [];
+    if (!projectId || !pageId || !pages[projectId]) {
+      return EMPTY_BLOCKS_ARRAY; // 🎯 Stable reference return
+    }
 
-    const currentPage = (pages[projectId] || []).find((p) => p.id === pageId);
-    if (!currentPage) return [];
+    const currentPage = pages[projectId].find((p) => p.id === pageId);
+    if (
+      !currentPage ||
+      !currentPage.blocks ||
+      currentPage.blocks.length === 0
+    ) {
+      return EMPTY_BLOCKS_ARRAY; // 🎯 Safe fallback on empty fresh states
+    }
 
-    return (currentPage.blocks || [])
+    return currentPage.blocks
       .filter((block) => (block.kanban?.columnId || 'Pending') === columnId)
       .sort(
         (a, b) => (a.kanban?.orderIndex || 0) - (b.kanban?.orderIndex || 0),

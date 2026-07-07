@@ -1,9 +1,9 @@
 // src/state/projectSlice.ts
 import type {
+  ActivityFeedItem,
   BaseActionType,
   BaseElementType,
   DropZoneScopeType,
-  FeedPost,
   HistoryEntry,
   Page,
   ProgressState,
@@ -13,6 +13,7 @@ import type {
 } from './types';
 
 import {
+  ActivityFeedItems,
   BaseAction,
   BaseElement,
   DropZoneScope,
@@ -90,7 +91,7 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       projects: [...state.projects, newProject],
       pages: { ...state.pages, [newProject.id]: [] },
       changeLog: { ...state.changeLog, [newProject.id]: [] },
-      feedPosts: { ...state.feedPosts, [newProject.id]: [] },
+      activityFeedItems: { ...state.activityFeedItems, [newProject.id]: [] },
     }));
 
     get().addHistoryEntry(
@@ -246,8 +247,8 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
 
   addFeedPost: (projectId, content) => {
     if (!projectId) return;
-    const { feedPosts, currentUser } = get();
-    const newPost: FeedPost = {
+    const { activityFeedItems, currentUser } = get();
+    const newPost: ActivityFeedItem = {
       id: `post_${Date.now()}`,
       projectId,
       userId: currentUser?.id || 'unknown',
@@ -255,13 +256,14 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       content,
       timestamp: Date.now(),
       likes: [],
+      type: ActivityFeedItems.Chat,
     };
 
-    const projectPosts = feedPosts[projectId] || [];
+    const projectPosts = activityFeedItems[projectId] || [];
 
     set({
-      feedPosts: {
-        ...feedPosts,
+      activityFeedItems: {
+        ...activityFeedItems,
         [projectId]: [newPost, ...projectPosts],
       },
     });
@@ -383,7 +385,7 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
   deleteProject: (projectId) => {
     if (!projectId) return;
 
-    const { projects, pages, changeLog, feedPosts } = get();
+    const { projects, pages, changeLog, activityFeedItems } = get();
 
     const nextPages = { ...pages };
     delete nextPages[projectId];
@@ -391,8 +393,8 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
     const nextLogs = { ...changeLog };
     delete nextLogs[projectId];
 
-    const nextFeeds = { ...feedPosts };
-    delete nextFeeds[projectId];
+    const nextActivityFeedItems = { ...activityFeedItems };
+    delete nextActivityFeedItems[projectId];
 
     const nextProjects = projects.filter((p) => p.id !== projectId);
 
@@ -400,7 +402,7 @@ export const createProjectSlice: StoreSlice<ProjectActions> = (set, get) => ({
       projects: nextProjects,
       pages: nextPages,
       changeLog: nextLogs,
-      feedPosts: nextFeeds,
+      activityFeedItems: nextActivityFeedItems,
     });
   },
 

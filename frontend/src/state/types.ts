@@ -225,6 +225,11 @@ export const BaseAction = {
 } as const;
 export type BaseActionType = (typeof BaseAction)[keyof typeof BaseAction];
 
+export interface HoveredCanvasTarget {
+  blockId: string;
+  direction: AnchorDirection; // 'top' | 'right' | 'bottom' | 'left'
+}
+
 // 🎯 The Master State Interface representing the complete merged project store
 
 export interface ProjectState {
@@ -248,6 +253,7 @@ export interface ProjectState {
   // --- 3. Ephemeral Infinite Grid Viewport States ---
   cameraOffset: XYPosition;
   zoomScale: number;
+  hoveredTarget: HoveredCanvasTarget | null;
 
   // --- 4. Project Slice Actions ---
   setActiveSidebarDrag: (
@@ -327,6 +333,7 @@ export interface ProjectState {
     offset: XYPosition | ((prev: XYPosition) => XYPosition),
   ) => void;
   setZoomScale: (scale: number | ((prev: number) => number)) => void;
+  setHoveredTarget: (target: HoveredCanvasTarget | null) => void;
   updateBlockPosition: (
     projectId: string | undefined,
     pageId: string | undefined,

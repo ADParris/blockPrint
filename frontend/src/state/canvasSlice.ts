@@ -1,5 +1,5 @@
 // src/state/canvasSlice.ts
-import type { AnchorDirection, StoreSlice } from './types';
+import type { AnchorDirection, StoreSlice, HoveredCanvasTarget } from './types';
 
 // 🎯 CENTRALIZED KEY UTILITIES
 export const createConnectionKey = (
@@ -26,12 +26,15 @@ const parseConnectionKey = (key: string) => {
 export interface CanvasSlice {
   cameraOffset: { x: number; y: number };
   zoomScale: number;
+  // 🎯 Track which port anchor is currently being hovered during a line drag
+  hoveredTarget: HoveredCanvasTarget | null;
   setCameraOffset: (
     offset:
       | { x: number; y: number }
       | ((prev: { x: number; y: number }) => { x: number; y: number }),
   ) => void;
   setZoomScale: (scale: number | ((prev: number) => number)) => void;
+  setHoveredTarget: (target: HoveredCanvasTarget | null) => void;
   updateBlockPosition: (
     projectId: string | undefined,
     pageId: string | undefined,
@@ -59,6 +62,7 @@ export interface CanvasSlice {
 export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
   cameraOffset: { x: 0, y: 0 },
   zoomScale: 1,
+  hoveredTarget: null, // Initial state
 
   setCameraOffset: (offset) => {
     const nextOffset =
@@ -70,6 +74,10 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
     const nextScale =
       typeof scale === 'function' ? scale(get().zoomScale) : scale;
     set({ zoomScale: nextScale });
+  },
+
+  setHoveredTarget: (target) => {
+    set({ hoveredTarget: target });
   },
 
   updateBlockPosition: (projectId, pageId, blockId, position) => {
@@ -204,7 +212,6 @@ export const createCanvasSlice: StoreSlice<CanvasSlice> = (set, get) => ({
           return {
             ...block,
             connections: (block.connections ?? []).map((c) => {
-              // Find the exact matching line path and append the color attribute
               if (
                 c.targetId === targetId &&
                 c.sourceDir === sourceDir &&

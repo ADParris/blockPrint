@@ -6,6 +6,7 @@ import {
   type WorkspaceViewModeType,
   WorkspaceViewMode,
 } from '../state/types';
+import { useProjectStore } from '../state/useProjectStore';
 import { paths } from '../utils/routes';
 import BlockPreviewRenderer from './Previews/BlockPreviewRenderer';
 
@@ -30,6 +31,7 @@ const Card: React.FC<CardProps> = ({
   isActiveDrag = false,
   isDraggingCanvas = false,
 }) => {
+  const setHoveredTarget = useProjectStore((state) => state.setHoveredTarget);
   const navigate = useNavigate();
   const { namespace, projectId, pageId } = useParams();
   const resolvedNamespace = namespace || 'ADParris';
@@ -109,22 +111,38 @@ const Card: React.FC<CardProps> = ({
       onDragStart={handleDragStart}
       className={`${baseClasses} ${contextClasses[viewContext]}`}
     >
-      {isCanvas && (
+      {isCanvas && block && (
         <>
           <div
             data-anchor-dir="top"
+            onPointerEnter={() =>
+              setHoveredTarget({ blockId: block.id, direction: 'top' })
+            }
+            onPointerLeave={() => setHoveredTarget(null)}
             className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-n-resize"
           />
           <div
             data-anchor-dir="right"
+            onPointerEnter={() =>
+              setHoveredTarget({ blockId: block.id, direction: 'right' })
+            }
+            onPointerLeave={() => setHoveredTarget(null)}
             className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-e-resize"
           />
           <div
             data-anchor-dir="bottom"
+            onPointerEnter={() =>
+              setHoveredTarget({ blockId: block.id, direction: 'bottom' })
+            }
+            onPointerLeave={() => setHoveredTarget(null)}
             className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-s-resize"
           />
           <div
             data-anchor-dir="left"
+            onPointerEnter={() =>
+              setHoveredTarget({ blockId: block.id, direction: 'left' })
+            }
+            onPointerLeave={() => setHoveredTarget(null)}
             className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-w-resize"
           />
         </>

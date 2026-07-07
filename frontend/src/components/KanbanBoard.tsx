@@ -17,7 +17,7 @@ interface KanbanBoardProps<T extends GenericKanbanItem> {
   title: string;
   subtitle: string;
   columns: KanbanColumnConfig[];
-  itemsByColumn: (columnId: string) => T[];
+  itemsByColumn: (columnId: ProgressState) => T[];
   onMoveItem: (
     itemId: string,
     targetColumnId: ProgressState,

@@ -28,6 +28,13 @@ export const PageKanbanView: React.FC = () => {
 
   const targetNamespace = namespace || 'ADParris';
 
+  const handleGetItemsByColumn = React.useCallback(
+    (columnId: string) => {
+      return getProjectPages(projectId, columnId as ProgressState);
+    },
+    [getProjectPages, projectId],
+  );
+
   const handleCardClick = (pageId: string) => {
     if (!projectId) return;
     navigate(paths.pageKanban(targetNamespace, projectId, pageId));
@@ -49,9 +56,7 @@ export const PageKanbanView: React.FC = () => {
       elementType={BaseElement.Page}
       subtitle="Track and organize documents and features across production pipelines."
       columns={COLUMNS}
-      itemsByColumn={(columnId) =>
-        getProjectPages(projectId, columnId as ProgressState)
-      }
+      itemsByColumn={handleGetItemsByColumn}
       onMoveItem={(pageId, targetColumnId, targetIndex) =>
         movePageInKanban(
           projectId,
