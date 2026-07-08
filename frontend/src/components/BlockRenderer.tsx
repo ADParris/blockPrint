@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { codeToHtml } from 'shiki';
 import type { BlockType, CanvasBlock } from '../state/types';
 import { useProjectStore } from '../state/useProjectStore';
 import ImageBlock from './ImageBlock';
@@ -40,21 +39,27 @@ const BlockRenderer: React.FC<BlockProps> = ({
   // 💡 Optimization: ONLY run the Shiki compiler if this block is actually a 'code' block!
   useEffect(() => {
     if (block.type !== 'code') return;
+    let cancelled = false;
 
     const highlightCode = async () => {
       const codeRaw = block.content || '// Click to add code...';
       try {
-        const html = await codeToHtml(codeRaw, {
-          lang: 'tsx',
-          theme: 'dark-plus',
-        });
-        setHighlightedHtml(html);
+        const { highlightTsxToHtml } =
+          await import('../utils/shikiHighlighter');
+        const html = await highlightTsxToHtml(codeRaw);
+        if (!cancelled) {
+          setHighlightedHtml(html);
+        }
       } catch (err) {
         console.error('Shiki highlighting failed:', err);
       }
     };
 
     highlightCode();
+
+    return () => {
+      cancelled = true;
+    };
   }, [block.content, block.type]);
 
   const handleDragStart = (e: React.DragEvent) => {

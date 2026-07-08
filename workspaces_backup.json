@@ -27,7 +27,7 @@
           "lastEditedBy": {
             "userId": "u1",
             "userName": "ADParris",
-            "timestamp": 1783395487138
+            "timestamp": 1783493180724
           },
           "blocks": [
             {
@@ -35,8 +35,8 @@
               "type": "p",
               "content": "Project Dashboard",
               "position": {
-                "x": 560,
-                "y": 0
+                "x": 920,
+                "y": 80
               },
               "kanban": {
                 "columnId": "InProgress",
@@ -49,10 +49,21 @@
               "type": "p",
               "content": "Document Canvas",
               "position": {
-                "x": 280,
-                "y": 280
+                "x": 920,
+                "y": 440
               },
-              "connections": [],
+              "connections": [
+                {
+                  "targetId": "2b3c1d9c-4eff-4b84-8270-6dad61c77498",
+                  "sourceDir": "right",
+                  "targetDir": "right"
+                },
+                {
+                  "targetId": "cff1e98b-194d-42e4-90a3-1d716cb401e0",
+                  "sourceDir": "bottom",
+                  "targetDir": "bottom"
+                }
+              ],
               "kanban": {
                 "columnId": "Pending",
                 "orderIndex": 0
@@ -63,10 +74,16 @@
               "type": "p",
               "content": "Spatial Canvas",
               "position": {
-                "x": 920,
-                "y": 280
+                "x": 440,
+                "y": 440
               },
-              "connections": [],
+              "connections": [
+                {
+                  "targetId": "88172656-140e-422b-8fb7-ddd26b0658e3",
+                  "sourceDir": "top",
+                  "targetDir": "top"
+                }
+              ],
               "kanban": {
                 "columnId": "Pending",
                 "orderIndex": 1
@@ -77,14 +94,19 @@
               "type": "p",
               "content": "Kanban Board",
               "position": {
-                "x": 560,
-                "y": 560
+                "x": 440,
+                "y": 80
               },
               "connections": [
                 {
-                  "targetId": "1f978460-68af-44ee-9a7f-aae7a3ff6435",
-                  "sourceDir": "top",
-                  "targetDir": "right"
+                  "targetId": "2b3c1d9c-4eff-4b84-8270-6dad61c77498",
+                  "sourceDir": "bottom",
+                  "targetDir": "bottom"
+                },
+                {
+                  "targetId": "2b3c1d9c-4eff-4b84-8270-6dad61c77498",
+                  "sourceDir": "right",
+                  "targetDir": "top"
                 }
               ],
               "kanban": {
