@@ -1,5 +1,66 @@
 @import 'tailwindcss';
 
+/* 1. Tell Tailwind to use class-based dark mode */
+@custom-variant dark (&:is(.dark *));
+
+/* 2. Define your semantic tokens in the @theme block */
+@theme {
+  /* Surfaces */
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+
+  /* Basic Colors */
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-emerald: var(--accent-emerald);
+
+  /* Borders */
+  --color-line: var(--border);
+  --color-highlight: var(--accent-blue);
+
+  /* Text */
+  --color-fg: var(--text-primary);
+  --color-fg-muted: var(--text-secondary);
+
+  /* You can still define your brand colors here too */
+  --color-brand-primary: oklch(0.6 0.2 250);
+}
+
+/* 3. Define the actual values for Light Mode (Default) */
+:root {
+  /* Basic Colors */
+  --accent-amber: oklch(81.236% 0.16827 79.835);
+  --accent-blue: oklch(0.6 0.2 250);
+  --accent-emerald: oklch(72.3% 0.219 149.579);
+
+  /* Borders */
+  --border: oklch(83.902% 0.0001 271.152);
+  --overlay: oklch(84.68% 0.1628 86.519);
+
+  /* Surfaces */
+  --surface: oklch(98.5% 0.002 95);
+  --surface-elevated: oklch(96% 0.01 95);
+
+  /* Text */
+  --text-primary: oklch(0.1462 0.0204 268.3);
+  --text-secondary: oklch(44.6% 0.043 257.281);
+}
+
+/* 4. Override the values for Dark Mode */
+.dark {
+  /* Surfaces */
+  --surface: oklch(0.1462 0.0204 268.3);
+  --surface-elevated: oklch(20.8% 0.042 265.755);
+
+  /* Text */
+  --text-primary: oklch(98.5% 0.002 95);
+  --text-secondary: oklch(96% 0.01 95);
+
+  /* Borders */
+  --border: oklch(20.8% 0.042 265.755);
+  --color-input: oklch(70.7% 0.165 254.624);
+}
+
 /* 🎯 Target your Kanban columns container */
 .custom-scrollbar {
   /* 💡 Tells Chrome/Windows to optimize native scroll elements (like the track background) for dark mode */
@@ -27,6 +88,11 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgb(71 85 105 / 0.6); /* slate-600/60 on hover */
+}
+
+.shiki-container .shiki {
+  background-color: var(--surface-elevated) !important;
+  padding: 12px;
 }
 
 /* 🚫 Force Google Voice and other dialer extensions to remain completely invisible inside blocks */

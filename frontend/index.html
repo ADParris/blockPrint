@@ -5,6 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
+    <script>
+      const theme = localStorage.getItem('theme');
+      const systemPrefersDark = window.matchMedia(
+        '(prefers-color-scheme: dark)',
+      ).matches;
+
+      // If they chose dark, OR they chose system and the OS is dark, OR they have no preference and OS is dark
+      if (
+        theme === 'dark' ||
+        (theme === 'system' && systemPrefersDark) ||
+        (!theme && systemPrefersDark)
+      ) {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

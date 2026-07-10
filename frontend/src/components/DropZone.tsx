@@ -112,15 +112,15 @@ export const DropZone: React.FC<DropZoneProps> = ({
             ? 'h-4 my-0.5 pointer-events-auto'
             : 'h-1.5 my-0 pointer-events-auto bg-transparent'
         }`
-      } ${isOver ? 'bg-blue-500/5' : ''}`} // 💡 Appended beautifully to the outer wrapper
+      } ${isOver ? 'bg-fg-blue/5' : ''}`} // 💡 Appended beautifully to the outer wrapper
     >
       {/* 🎯 VISUAL INDICATOR LINE */}
       <div
         className={`w-full pointer-events-none rounded transition-all duration-150 ${
           isOver
-            ? 'h-1 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]' /* Instant reactive line strike */
+            ? 'h-1 bg-fg-blue shadow-[0_0_10px_rgba(59,130,246,0.6)]' /* Instant reactive line strike */
             : isRevealed
-              ? 'h-1 bg-slate-700/40'
+              ? 'h-1 bg-surface-elevated'
               : 'h-0.5 bg-transparent'
         }`}
       />

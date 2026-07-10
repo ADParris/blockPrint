@@ -28,3 +28,7 @@ export const loadImageBlob = async (id: string): Promise<string | null> => {
   // Creates a fast, memory-mapped string pointer to the raw binary data
   return URL.createObjectURL(blob);
 };
+
+export const deleteImageBlob = async (id: string): Promise<void> => {
+  await del(id);
+};

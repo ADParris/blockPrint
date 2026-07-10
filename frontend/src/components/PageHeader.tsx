@@ -77,17 +77,17 @@ function PageHeader({ projectId, page }: PageHeaderProps) {
 
       {/* 1. Hover Action Context Bar */}
       {(!hasCover || !hasTitleIntent) && (
-        <div className="absolute -top-6 left-0 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-out z-10 select-none bg-[#0b0f19]/80 backdrop-blur-sm px-2 py-1 rounded border border-slate-800/40 shadow-md">
+        <div className="absolute -top-6 left-0 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-out z-10 select-none bg-surface/80 backdrop-blur-sm px-2 py-1 rounded border border-line shadow-md">
           {!hasCover && (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs text-slate-400 hover:text-indigo-400 font-medium transition-colors cursor-pointer"
+              className="text-xs text-slate-400 hover:text-fg-blue font-medium transition-colors cursor-pointer"
             >
               📷 Add cover
             </button>
           )}
           {!hasCover && !hasTitleIntent && (
-            <span className="text-slate-700 text-xs">|</span>
+            <span className="text-fg-muted text-xs">|</span>
           )}
           {!hasTitleIntent && (
             <button
@@ -95,7 +95,7 @@ function PageHeader({ projectId, page }: PageHeaderProps) {
                 setIsUserAddingTitle(true);
                 updatePageHeader(projectId, page.id, { headerTitle: '' });
               }}
-              className="text-xs text-slate-400 hover:text-indigo-400 font-medium transition-colors cursor-pointer"
+              className="text-xs text-slate-400 hover:text-fg-blue font-medium transition-colors cursor-pointer"
             >
               ✍️ Add title
             </button>
@@ -105,10 +105,10 @@ function PageHeader({ projectId, page }: PageHeaderProps) {
 
       {/* 2. Pure Banner Layout Layer */}
       {hasCover && (
-        <div className="relative group/cover w-full h-48 overflow-hidden rounded-xl border border-slate-800/30 bg-zinc-900/40 shadow-inner">
+        <div className="relative group/cover w-full h-48 overflow-hidden rounded-xl border border-line bg-surface/40 shadow-inner">
           {/* SKELETON LOADER LAYER */}
           <div
-            className={`absolute inset-0 z-30 w-full h-full bg-slate-800/20 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
+            className={`absolute inset-0 z-30 w-full h-full bg-surface/20 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
               isAssetLoading || !isDecoded ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -181,7 +181,7 @@ function PageHeader({ projectId, page }: PageHeaderProps) {
             }
           }}
           placeholder="Untitled"
-          className="w-full bg-transparent border-0 outline-none text-4xl font-extrabold text-slate-100 placeholder-slate-700 tracking-tight mt-4"
+          className="w-full bg-transparent border-0 outline-none text-4xl font-extrabold text-fg placeholder-fg-muted tracking-tight mt-4"
         />
       )}
     </div>

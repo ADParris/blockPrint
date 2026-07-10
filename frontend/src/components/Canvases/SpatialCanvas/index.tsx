@@ -52,7 +52,7 @@ const SpatialCanvas: React.FC = () => {
     <div
       ref={canvasRef}
       {...mouseHandlers}
-      className={`relative w-full h-full overflow-hidden select-none bg-[#070a13] ${
+      className={`relative w-full h-full overflow-hidden select-none bg-surface ${
         mouseState.activeDragId || mouseState.isPanning
           ? 'cursor-grabbing'
           : 'cursor-grab'

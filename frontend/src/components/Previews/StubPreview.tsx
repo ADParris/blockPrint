@@ -21,7 +21,7 @@ const StubPreview: React.FC<StubPreviewProps> = ({ content }) => {
       </div>
 
       {/* 🎯 Elegant Amber STUB indicator nested safely inside the component context */}
-      <div className="absolute top-0 right-0 bg-amber-950/90 border-l border-b border-amber-500/30 backdrop-blur-sm px-1.5 py-0.5 rounded-bl text-[9px] font-mono font-bold text-amber-400 uppercase tracking-wider select-none shadow-sm">
+      <div className="absolute top-0 right-0 bg-fg-amber/20 border-l border-b border-fg-amber/80 backdrop-blur-sm px-1.5 py-0.5 rounded-bl text-[9px] font-mono font-bold text-fg-amber uppercase tracking-wider select-none shadow-sm">
         Stub
       </div>
     </div>

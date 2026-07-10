@@ -11,7 +11,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ blockId, content }) => {
   const { previewUrl, isAssetLoading } = useImageBlob(blockId, content);
 
   return (
-    <div className="w-full h-full rounded bg-slate-950 border border-slate-800/80 overflow-hidden relative flex items-center justify-center">
+    <div className="w-full h-full rounded bg-surface border border-line overflow-hidden relative flex items-center justify-center">
       {previewUrl ? (
         <>
           {/* Ambient background blur layer just like your document view */}
@@ -33,7 +33,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ blockId, content }) => {
         </span>
       )}
 
-      <div className="absolute top-0 right-0 bg-slate-900/90 border-l border-b border-slate-800 backdrop-blur-sm px-1.5 py-0.5 rounded-bl text-[10px] text-indigo-400 font-medium select-none z-20">
+      <div className="absolute top-0 right-0 bg-fg-blue/20 border-l border-b border-fg-blue backdrop-blur-sm px-1.5 py-0.5 rounded-bl text-[10px] text-fg-blue font-medium select-none z-20">
         IMG
       </div>
     </div>

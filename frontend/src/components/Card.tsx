@@ -55,18 +55,14 @@ const Card: React.FC<CardProps> = ({
     : {};
 
   const baseClasses =
-    'bg-slate-900 border border-slate-800 hover:border-sky-500/50 rounded-xl transition-all select-none text-slate-200 text-sm relative';
+    'bg-surface border border-line hover:border-fg-blue/50 rounded-xl transition-all select-none text-fg text-sm relative';
 
   const contextClasses = {
     [WorkspaceViewMode.PageCanvas]: `group w-64 h-32 pointer-events-auto transition-shadow duration-100 ${
-      isActiveDrag
-        ? 'shadow-2xl ring-2 ring-blue-500/50 z-30'
-        : 'shadow-xl z-20'
+      isActiveDrag ? 'shadow-2xl ring-2 ring-fg-blue/50 z-30' : 'shadow-xl z-20'
     }`,
     [WorkspaceViewMode.PageKanban]: `group w-64 h-32 pointer-events-auto active:cursor-grabbing transition-shadow duration-100 cursor-pointer ${
-      isActiveDrag
-        ? 'shadow-2xl ring-2 ring-blue-500/50 z-30'
-        : 'shadow-xl z-20'
+      isActiveDrag ? 'shadow-2xl ring-2 ring-fg-blue/50 z-30' : 'shadow-xl z-20'
     }`,
     [WorkspaceViewMode.PageDocument]:
       'relative p-3 w-full shadow-sm cursor-pointer',
@@ -119,7 +115,7 @@ const Card: React.FC<CardProps> = ({
               setHoveredTarget({ blockId: block.id, direction: 'top' })
             }
             onPointerLeave={() => setHoveredTarget(null)}
-            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-n-resize"
+            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-fg border-2 border-fg-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-n-resize"
           />
           <div
             data-anchor-dir="right"
@@ -127,7 +123,7 @@ const Card: React.FC<CardProps> = ({
               setHoveredTarget({ blockId: block.id, direction: 'right' })
             }
             onPointerLeave={() => setHoveredTarget(null)}
-            className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-e-resize"
+            className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-fg border-2 border-fg-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-e-resize"
           />
           <div
             data-anchor-dir="bottom"
@@ -135,7 +131,7 @@ const Card: React.FC<CardProps> = ({
               setHoveredTarget({ blockId: block.id, direction: 'bottom' })
             }
             onPointerLeave={() => setHoveredTarget(null)}
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-s-resize"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-fg border-2 border-fg-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-s-resize"
           />
           <div
             data-anchor-dir="left"
@@ -143,7 +139,7 @@ const Card: React.FC<CardProps> = ({
               setHoveredTarget({ blockId: block.id, direction: 'left' })
             }
             onPointerLeave={() => setHoveredTarget(null)}
-            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-w-resize"
+            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-fg border-2 border-fg-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 hover:scale-125 cursor-w-resize"
           />
         </>
       )}

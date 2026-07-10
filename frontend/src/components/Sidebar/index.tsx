@@ -7,6 +7,7 @@ import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
 import DropZone from '../DropZone';
 import Modal from '../Modal';
+import SidebarHeader from './SidebarHeader';
 import { SidebarLayoutToggle } from './SidebarLayoutToggle';
 import { SidebarProjectItem } from './SidebarProjectItem';
 import SidebarSectionHeader from './SidebarSectionHeader';
@@ -132,9 +133,7 @@ const Sidebar = () => {
 
   return (
     <div className="flex flex-col h-full p-4 select-none">
-      <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 px-2">
-        blockPrint PM
-      </div>
+      <SidebarHeader />
 
       <nav className="flex-1 overflow-y-auto space-y-6 custom-scrollbar pr-1">
         {/* 👤 PERSONAL WORKSPACE SECTION */}
@@ -147,7 +146,7 @@ const Sidebar = () => {
 
           <div className="flex flex-col w-full text-left justify-start items-start">
             {personalProjects.length === 0 ? (
-              <div className="text-xs text-slate-600 pl-2 italic py-1">
+              <div className="text-xs text-fg/60 pl-2 italic py-1">
                 No projects found
               </div>
             ) : (
@@ -180,10 +179,6 @@ const Sidebar = () => {
                         activePageId={pageId || null}
                         sortedPages={sortedPages}
                         section={DropZoneScope.Personal}
-                        isMenuOpen={
-                          activeMenu?.targetId === project.id &&
-                          activeMenu?.type === SidebarElement.Project
-                        }
                         onCreatePageClick={(e) =>
                           handleCreatePage(e, project.id)
                         }
@@ -193,8 +188,6 @@ const Sidebar = () => {
                         onPageMenuToggle={(e, targetPageId) =>
                           handleMenuClick(e, targetPageId, SidebarElement.Page)
                         }
-                        activeMenuTargetId={activeMenu?.targetId}
-                        activeMenuType={activeMenu?.type}
                       />
                     </div>
 
@@ -263,10 +256,6 @@ const Sidebar = () => {
                         activePageId={pageId || null}
                         sortedPages={sortedPages}
                         section={DropZoneScope.Group}
-                        isMenuOpen={
-                          activeMenu?.targetId === project.id &&
-                          activeMenu?.type === SidebarElement.Project
-                        }
                         onCreatePageClick={(e) =>
                           handleCreatePage(e, project.id)
                         }
@@ -276,8 +265,6 @@ const Sidebar = () => {
                         onPageMenuToggle={(e, targetPageId) =>
                           handleMenuClick(e, targetPageId, SidebarElement.Page)
                         }
-                        activeMenuTargetId={activeMenu?.targetId}
-                        activeMenuType={activeMenu?.type}
                       />
                     </div>
 
@@ -298,7 +285,7 @@ const Sidebar = () => {
         </div>
       </nav>
 
-      <div className="pt-4 border-t border-slate-800/60 mt-auto">
+      <div className="pt-4 border-t border-line mt-auto">
         <SidebarLayoutToggle />
       </div>
 

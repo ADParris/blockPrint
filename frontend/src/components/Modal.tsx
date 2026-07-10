@@ -109,7 +109,7 @@ const Modal: React.FC<ModalProps> = ({ menuPosition, children, onClose }) => {
   return (
     <div
       ref={modalRef}
-      className={`w-fit h-fit max-w-[90vw] max-h-[90vh] overflow-auto bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 
+      className={`w-fit h-fit max-w-[90vw] max-h-[90vh] overflow-auto bg-surface border border-line rounded-lg shadow-xl z-50 
         transition-all duration-100 ease-out 
         ${isReady ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
       style={positioningStyle}

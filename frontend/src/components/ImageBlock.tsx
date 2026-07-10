@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { deleteImageBlob } from '../api/idbStorage';
 import { useImageBlob } from '../hooks/useImageBlob'; // Adjust this path to wherever you saved it!
 import { useProjectStore } from '../state/useProjectStore';
 import { ImageControls } from './ImageControls';
@@ -7,7 +8,7 @@ import Loader from './Loader';
 interface ImageBlockProps {
   blockId: string;
   content: string;
-  onContentChange: (id: string, content: string) => void;
+  onContentChange: (content: string) => void;
 }
 
 const ImageBlock: React.FC<ImageBlockProps> = ({
@@ -40,7 +41,7 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
     if (file) {
       const success = await processFile(file);
       if (success) {
-        onContentChange(blockId, blockId);
+        onContentChange(blockId);
       }
       e.target.value = '';
     }
@@ -53,7 +54,7 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
     if (file) {
       const success = await processFile(file);
       if (success) {
-        onContentChange(blockId, blockId);
+        onContentChange(blockId);
       }
     }
   };
@@ -61,13 +62,13 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
   return (
     <div className="w-full my-4">
       {content ? (
-        <div className="relative group border border-slate-800/60 shadow-xl h-64 rounded-lg flex items-center justify-center overflow-hidden">
+        <div className="relative group border border-line shadow-xl h-64 rounded-lg flex items-center justify-center overflow-hidden">
           {/* 🎨 Opaque Canvas Base Layer */}
-          <div className="absolute inset-0 z-0 bg-[#1e1e1e]" />
+          <div className="absolute inset-0 z-0 bg-surface" />
 
           {/* 📡 SKELETON LOADER LAYER */}
           <div
-            className={`absolute inset-0 z-30 w-full h-full bg-slate-800/20 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
+            className={`absolute inset-0 z-30 w-full h-full bg-surface/20 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
               isAssetLoading || !isDecoded ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -105,15 +106,16 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
           {/* 🗑️ INLINE CONTEXT CONTROLS */}
           {isDecoded && (
             <ImageControls
-              onRemove={() => {
+              onRemove={async () => {
+                await deleteImageBlob(blockId);
                 setImageCacheUrl(blockId, '');
-                onContentChange(blockId, '');
+                onContentChange('');
               }}
               onSwap={async (file) => {
                 setImageCacheUrl(blockId, ''); // Clear cache line instantly for the swap
                 const success = await processFile(file);
                 if (success) {
-                  onContentChange(blockId, blockId);
+                  onContentChange(blockId);
                 }
               }}
             />
@@ -134,8 +136,8 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
           }}
           className={`w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors ${
             isDragging
-              ? 'border-indigo-500 bg-indigo-500/5'
-              : 'border-slate-800 hover:border-slate-700 bg-slate-900/10'
+              ? 'border-fg-blue bg-fg-blue/5'
+              : 'border-line hover:border-line/20 bg-surface/10'
           } p-8 min-h-32`}
         >
           <input
@@ -145,7 +147,7 @@ const ImageBlock: React.FC<ImageBlockProps> = ({
             className="hidden"
             onChange={handleFileChange}
           />
-          <span className="text-sm text-slate-400 font-medium">
+          <span className="text-sm text-fg-muted font-medium">
             Drag & drop an image here, or click to upload
           </span>
         </div>

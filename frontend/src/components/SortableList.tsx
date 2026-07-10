@@ -24,7 +24,7 @@ function SortableList<T extends { id: string }>({
   return (
     <div className="flex flex-col w-full text-left">
       {items.length === 0 ? (
-        <div className="text-xs text-slate-600 pl-2 italic py-2">
+        <div className="text-xs text-fg-muted pl-2 italic py-2">
           No items found
         </div>
       ) : (

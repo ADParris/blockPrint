@@ -43,12 +43,12 @@ export function KanbanBoard<T extends GenericKanbanItem>({
     React.useState<ProgressState | null>(null);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0b0f19] py-6 overflow-hidden select-none">
+    <div className="flex-1 flex flex-col h-full bg-surface py-6 overflow-hidden select-none">
       {/* Header section... */}
       <div className="mb-6 ml-6 flex items-center gap-4">
         <button
           onClick={onBack}
-          className="mt-1 p-2 text-slate-500 hover:text-slate-200 hover:bg-slate-900 border border-transparent hover:border-slate-800 rounded-lg transition-all flex items-center justify-center shrink-0"
+          className="mt-1 p-2 text-fg-muted hover:text-fg hover:bg-surface border border-transparent hover:border-surface rounded-lg transition-all flex items-center justify-center shrink-0"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -66,10 +66,8 @@ export function KanbanBoard<T extends GenericKanbanItem>({
           </svg>
         </button>
         <div className="flex flex-col min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-slate-100">
-            {title}
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5 truncate">{subtitle}</p>
+          <h1 className="text-xl font-bold tracking-tight text-fg">{title}</h1>
+          <p className="text-xs text-fg-muted mt-0.5 truncate">{subtitle}</p>
         </div>
       </div>
 
@@ -94,16 +92,16 @@ export function KanbanBoard<T extends GenericKanbanItem>({
                 }
               }}
               onDrop={() => setActiveHoveredColumnId(null)}
-              className={`relative flex flex-col border border-slate-800 border-t-2 ${col.color} rounded-xl w-80 max-w-80 h-full bg-slate-950/20 transition-colors duration-200 ${
-                isLaneHovered ? 'bg-slate-900/10 border-slate-700' : ''
+              className={`relative flex flex-col border border-line border-t-2 ${col.color} rounded-xl w-80 max-w-80 h-full bg-surface-elevated/40 transition-colors duration-200 ${
+                isLaneHovered ? 'bg-surface/10 border-line' : ''
               }`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between mb-2 p-3 border-b border-slate-800 shrink-0">
-                <span className="text-sm font-semibold tracking-wide text-slate-300">
+              <div className="flex items-center justify-between mb-2 p-3 border-b border-line bg-surface/60 shrink-0">
+                <span className="text-sm font-semibold tracking-wide text-fg">
                   {col.title}
                 </span>
-                <span className="text-xs font-mono bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-mono bg-surface border border-line text-fg-muted px-2 py-0.5 rounded-full">
                   {laneItems.length}
                 </span>
               </div>
@@ -119,7 +117,7 @@ export function KanbanBoard<T extends GenericKanbanItem>({
                       onKanbanDrop={onMoveItem}
                       size={isLaneHovered ? 'md' : 'sm'}
                     />
-                    <div className="w-full text-center py-8 text-xs text-slate-600 border border-dashed border-slate-800/60 rounded-lg">
+                    <div className="w-full text-center py-8 text-xs text-fg-muted border border-dashed border-line/60 rounded-lg">
                       No items in this column
                     </div>
                   </>

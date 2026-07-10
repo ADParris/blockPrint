@@ -1,15 +1,14 @@
 // src/components/Sidebar/SidebarPageItem.tsx
 import React from 'react';
-import { LuFileText } from 'react-icons/lu';
+import { LuEllipsisVertical, LuFileText } from 'react-icons/lu';
 import { SidebarElement, type Page } from '../../state/types';
 import { useProjectStore } from '../../state/useProjectStore';
+import Button from '../Button';
 
 interface SidebarPageItemProps {
   page: Page;
   index: number;
-  isLast: boolean;
   isPageActive: boolean;
-  isMenuOpen: boolean;
   onPageClick: () => void;
   onMenuToggle: (e: React.MouseEvent) => void;
 }
@@ -18,7 +17,6 @@ export const SidebarPageItem: React.FC<SidebarPageItemProps> = ({
   page,
   index,
   isPageActive,
-  isMenuOpen,
   onPageClick,
   onMenuToggle,
 }) => {
@@ -31,16 +29,17 @@ export const SidebarPageItem: React.FC<SidebarPageItemProps> = ({
       data-sidebar-item-id={String(index)}
       className="group relative flex flex-col w-full"
     >
-      <div className="relative flex items-center w-full min-h-7 my-0.5">
-        <button
+      <div className="group/outer relative flex items-center w-full min-h-7 my-0.5">
+        <Button
           onClick={onPageClick}
-          className={`flex items-center w-full text-left pl-2 pr-10 py-1 text-xs rounded transition-all duration-150 truncate select-none ${
+          className={`w-full text-left pl-2 pr-10 py-1 text-xs ${
             isPageActive
-              ? 'bg-blue-950/40 text-blue-400 font-medium shadow-sm'
-              : 'text-slate-500 hover:bg-slate-900/40 hover:text-slate-300'
+              ? 'text-fg'
+              : 'text-fg/60 hover:text-fg group-hover/outer:text-fg'
           }`}
         >
           <span
+            className="cursor-grab active:cursor-grabbing mr-2 shrink-0"
             data-drag-handle-for={page.id}
             draggable="true"
             onDragStart={(e) => {
@@ -54,28 +53,24 @@ export const SidebarPageItem: React.FC<SidebarPageItemProps> = ({
             onDragEnd={() => {
               setActiveSidebarDrag(null, null); // Reset the active drag object type and scope in the store
             }}
-            className="flex items-center shrink-0 mr-2 cursor-grab text-slate-600 hover:text-slate-400 active:cursor-grabbing"
           >
-            <LuFileText className="w-3.5 h-3.5" />
+            <LuFileText
+              className={`w-3.5 h-3.5  ${
+                isPageActive
+                  ? 'text-accent-blue' // Active
+                  : 'text-accent-blue/60 group-hover/button:text-accent-blue group-hover/outer:text-accent-blue' // Inactive
+              }`}
+            />
           </span>
-          <span className="truncate pr-2">{page.title}</span>
-        </button>
+          {page.title}
+        </Button>
 
         <div
-          className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 items-center justify-center ${
-            isMenuOpen ? 'flex' : 'hidden group-hover:flex'
-          }`}
+          className={`absolute right-2 flex items-center space-x-1 group-hover/outer:opacity-100 transition-opacity duration-150${isPageActive ? ' opacity-100' : ' opacity-0'}`}
         >
-          <button
-            onClick={onMenuToggle}
-            className={`flex items-center justify-center w-4.5 h-4.5 rounded text-xs transition-colors pointer-events-auto ${
-              isMenuOpen
-                ? 'bg-slate-800 text-slate-300'
-                : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'
-            }`}
-          >
-            &#8942;
-          </button>
+          <Button onClick={onMenuToggle}>
+            <LuEllipsisVertical className="w-4 h-4 text-fg/40 group-hover/button:text-fg" />
+          </Button>
         </div>
       </div>
     </div>

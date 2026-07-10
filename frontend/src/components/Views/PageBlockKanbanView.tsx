@@ -89,7 +89,7 @@ export const PageBlockKanbanView: React.FC = () => {
       onBack={handleOnBackClick}
       renderCard={(block) => (
         <Card viewContext={WorkspaceViewMode.PageKanban} block={block}>
-          <div className="max-h-24 overflow-hidden rounded-lg border border-slate-800/40 bg-slate-950/40 pointer-events-none">
+          <div className="max-h-24 overflow-hidden rounded-lg border border-line bg-surface pointer-events-none">
             <BlockPreviewRenderer block={block} />
           </div>
         </Card>

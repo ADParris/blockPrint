@@ -28,15 +28,15 @@ const ActivityFeedCard: React.FC<ActivityFeedCardProps> = ({
   // 🎯 Dynamic theme mapping for borders, background tints, and hover states
   const cardBorderClass = isStub
     ? isClickable
-      ? 'border-amber-500/30 bg-amber-500/[0.02] hover:border-amber-500/60 shadow-amber-950/5'
-      : 'border-amber-500/20 bg-amber-500/[0.01]'
+      ? 'border-accent-amber/40 bg-accent-amber/[0.03] hover:border-accent-amber/70 shadow-accent-amber/10'
+      : 'border-accent-amber/30 bg-accent-amber/[0.02]'
     : isChat
       ? isClickable
-        ? 'border-emerald-500/30 bg-emerald-500/[0.02] hover:border-emerald-500/60 shadow-emerald-950/5'
-        : 'border-emerald-500/20 bg-emerald-500/[0.01]'
+        ? 'border-accent-emerald/40 bg-accent-emerald/[0.03] hover:border-accent-emerald/70 shadow-accent-emerald/10'
+        : 'border-accent-emerald/30 bg-accent-emerald/[0.02]'
       : isClickable // Fallback default to NOTE style
-        ? 'border-sky-500/30 bg-sky-500/[0.02] hover:border-sky-500/60 shadow-sky-950/5'
-        : 'border-sky-500/20 bg-sky-500/[0.01]';
+        ? 'border-accent-blue/40 bg-accent-blue/[0.03] hover:border-accent-blue/70 shadow-accent-blue/10'
+        : 'border-accent-blue/30 bg-accent-blue/[0.02]';
 
   return (
     <div
@@ -44,37 +44,35 @@ const ActivityFeedCard: React.FC<ActivityFeedCardProps> = ({
     >
       {/* 🎯 Absolute Corner Pill: Fixed 3-way color splitter */}
       <div
-        className={`absolute -top-2.5 right-4 px-2 py-0.5 rounded-md text-[9px] font-mono font-bold tracking-wider uppercase border shadow-sm select-none
+        className={`absolute -top-2.5 right-4 px-2 py-0.5 rounded-md text-[9px] font-mono font-bold tracking-wider uppercase border shadow-sm select-none bg-surface
           ${
             isStub
-              ? 'bg-amber-950/90 text-amber-400 border-amber-600/30'
+              ? 'text-accent-amber border-accent-amber/60'
               : isChat
-                ? 'bg-emerald-950/90 text-emerald-400 border-emerald-600/30'
-                : 'bg-sky-950/90 text-sky-400 border-sky-600/30'
+                ? 'text-accent-emerald border-accent-emerald/60'
+                : 'text-accent-blue border-accent-blue/60'
           }`}
       >
         {type}
       </div>
 
       {/* Meta Top Line Row */}
-      <div className="flex items-center justify-between text-xs text-slate-400">
-        <span className="font-medium text-slate-300">{userName}</span>
-        <span className="text-[10px] font-mono text-slate-500">
-          {timestampStr}
-        </span>
+      <div className="flex items-center justify-between text-xs text-fg-muted">
+        <span className="font-medium text-fg">{userName}</span>
+        <span className="text-[10px] font-mono text-fg/60">{timestampStr}</span>
       </div>
 
       {/* Content Text Line */}
-      <p className="text-sm text-slate-100 font-sans leading-relaxed wrap-break-word pr-12">
+      <p className="text-sm text-fg font-sans leading-relaxed wrap-break-word pr-12">
         {content}
       </p>
 
       {/* Dynamic Link footer string */}
       {isClickable && targetPageTitle && (
-        <div className="flex items-center gap-1.5 pt-1 text-xs font-medium text-slate-400 group-hover:text-blue-400 transition-colors w-fit">
-          <span className="text-emerald-400 text-[10px]">⚡</span>
+        <div className="flex items-center gap-1.5 pt-1 text-xs font-medium text-fg-muted group-hover:text-accent-blue transition-colors w-fit">
+          <span className="text-accent-emerald text-[10px]">⚡</span>
           <span>Context Link →</span>
-          <span className="underline decoration-slate-600 group-hover:decoration-blue-500/50 transition-colors">
+          <span className="underline decoration-fg/40 group-hover:decoration-accent-blue/50 transition-colors">
             {targetPageTitle}
           </span>
         </div>

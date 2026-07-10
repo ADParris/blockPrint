@@ -26,8 +26,8 @@ export const Loader: React.FC<LoaderProps> = ({
       <div
         className={`
           rounded-full 
-          border-zinc-800 
-          border-t-indigo-500 
+          border-line 
+          border-t-fg-blue 
           animate-spin 
           ease-in-out
           ${sizeClasses[size]}
@@ -36,7 +36,7 @@ export const Loader: React.FC<LoaderProps> = ({
 
       {/* Optional contextual micro-copy */}
       {label && (
-        <span className="text-xs text-zinc-500 font-medium mt-2.5 tracking-wide animate-pulse">
+        <span className="text-xs text-fg-muted font-medium mt-2.5 tracking-wide animate-pulse">
           {label}
         </span>
       )}

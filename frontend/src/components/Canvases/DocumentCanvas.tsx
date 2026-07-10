@@ -1,11 +1,11 @@
 // src/components/Canvases/DocumentCanvas.tsx
 import React, { useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { useProjectStore } from '../../state/useProjectStore';
-import BlockRenderer from '../BlockRenderer';
-import PageHeader from '../PageHeader';
-import SortableList from '../SortableList';
 import { BaseElement } from '../../state/types';
+import { useProjectStore } from '../../state/useProjectStore';
+import PageHeader from '../PageHeader';
+import BlockRenderer from '../Renderers/BlocksRenderer';
+import SortableList from '../SortableList';
 
 const DocumentCanvas: React.FC = () => {
   // 🎯 1. Extract context directly from URL parameter strings

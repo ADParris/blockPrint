@@ -1,8 +1,10 @@
 // src/components/Sidebar/SidebarLayoutToggle.tsx
 import React from 'react';
+import { LuFileBox, LuFileSliders, LuFileText } from 'react-icons/lu';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useProjectStore } from '../../state/useProjectStore';
 import { paths } from '../../utils/routes';
+import Button from '../Button';
 
 export const SidebarLayoutToggle: React.FC = () => {
   const navigate = useNavigate();
@@ -55,48 +57,54 @@ export const SidebarLayoutToggle: React.FC = () => {
     });
   };
 
+  const iconClassNames = 'h-10 w-10';
+
+  const viewToggleButtons = [
+    {
+      label: 'document',
+      isActive: isDocument,
+      onClick: handleDocumentClick,
+      icon: <LuFileText className={iconClassNames} />,
+    },
+    {
+      label: 'canvas',
+      isActive: isCanvas,
+      onClick: handleCanvasClick,
+      icon: <LuFileBox className={iconClassNames} />,
+    },
+    {
+      label: 'kanban',
+      isActive: isKanban,
+      onClick: handleKanbanClick,
+      icon: <LuFileSliders className={iconClassNames} />,
+    },
+  ];
+
+  const baseClassNames =
+    'border border-line flex flex-col items-center justify-between p-1 rounded-md shadow-md';
+
+  const renderedButtons = viewToggleButtons.map(
+    ({ label, isActive, onClick, icon }) => (
+      <Button key={label} onClick={onClick}>
+        <span
+          className={`${baseClassNames} ${
+            isActive
+              ? 'bg-accent-blue text-surface'
+              : 'text-accent-blue/60 group-hover/button:text-accent-blue'
+          }`}
+        >
+          {icon}
+        </span>
+      </Button>
+    ),
+  );
+
   return (
-    <div className="mt-auto p-4 border-t border-slate-800 bg-[#0b0f19]">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+    <div>
+      <p className="flex justify-center text-sm font-bold text-fg-muted uppercase tracking-wide mb-4">
         Workspace View
       </p>
-      <div className="flex bg-slate-950 border border-slate-800 p-1 rounded-lg w-full gap-1">
-        {/* Document Mode Toggle */}
-        <button
-          onClick={handleDocumentClick}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-            isDocument
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          📝 Document
-        </button>
-
-        {/* Spatial Canvas Mode Toggle */}
-        <button
-          onClick={handleCanvasClick}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-            isCanvas
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          🗺️ Canvas
-        </button>
-
-        {/* Kanban Board Toggle */}
-        <button
-          onClick={handleKanbanClick}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-            isKanban
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          📋 Kanban
-        </button>
-      </div>
+      <div className="flex justify-between px-3">{renderedButtons}</div>
     </div>
   );
 };

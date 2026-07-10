@@ -27,9 +27,22 @@
           "lastEditedBy": {
             "userId": "u1",
             "userName": "ADParris",
-            "timestamp": 1783493180724
+            "timestamp": 1783667998952
           },
           "blocks": [
+            {
+              "id": "992d279b-04f2-4b75-90de-19bb5144faa8",
+              "type": "code",
+              "content": "// src/App.tsx\nimport { Navigate, Route, Routes } from 'react-router-dom';\nimport GlobalView from './components/Views/GlobalView';\n\nfunction App() {\n  return (\n    <>\n      {/* 🎯 Define the routing map right here */}\n      <Routes>\n        {/* Default landing: redirect straight to your personal workspace */}\n        <Route path=\"/\" element={<Navigate to=\"/ADParris\" replace />} />\n\n        {/* This route catches namespaces, project IDs, AND page IDs all under one roof */}\n        <Route path=\"/:namespace\" element={<GlobalView />} />\n        <Route\n          path=\"/:namespace/projects/:projectId\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/dashboard\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/roadmap\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/document\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/kanban\"\n          element={<GlobalView />}\n        />\n        <Route\n          path=\"/:namespace/projects/:projectId/pages/:pageId/canvas\"\n          element={<GlobalView />}\n        />\n\n        {/* Catch-all fallback */}\n        <Route\n          path=\"*\"\n          element={\n            <div className=\"flex items-center justify-center h-full text-slate-500 text-xs\">\n              Route not found.\n            </div>\n          }\n        />\n      </Routes>\n    </>\n  );\n}\n\nexport default App;\n",
+              "position": {
+                "x": 240,
+                "y": -80
+              },
+              "kanban": {
+                "columnId": "Completed",
+                "orderIndex": 0
+              }
+            },
             {
               "id": "2b3c1d9c-4eff-4b84-8270-6dad61c77498",
               "type": "p",
@@ -42,7 +55,35 @@
                 "columnId": "InProgress",
                 "orderIndex": 0
               },
-              "connections": []
+              "connections": [
+                {
+                  "targetId": "7ca9ed36-f140-4319-b2fe-33c8158e7821",
+                  "sourceDir": "left",
+                  "targetDir": "left"
+                }
+              ]
+            },
+            {
+              "id": "cadbba31-2659-4f44-ab43-a853b17ff812",
+              "type": "image",
+              "content": "cadbba31-2659-4f44-ab43-a853b17ff812",
+              "position": {
+                "x": 1200,
+                "y": -80
+              },
+              "kanban": {
+                "columnId": "InProgress",
+                "orderIndex": 1
+              }
+            },
+            {
+              "id": "19d24485-3006-4968-b061-08df40d2a7e8",
+              "type": "p",
+              "content": "New Feature Idea",
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 0
+              }
             },
             {
               "id": "1f978460-68af-44ee-9a7f-aae7a3ff6435",
@@ -66,7 +107,16 @@
               ],
               "kanban": {
                 "columnId": "Pending",
-                "orderIndex": 0
+                "orderIndex": 1
+              }
+            },
+            {
+              "id": "27f93c3b-ee76-45b6-a89f-d16ff1b54395",
+              "type": "p",
+              "content": "Special Note",
+              "kanban": {
+                "columnId": "Pending",
+                "orderIndex": 2
               }
             },
             {
@@ -74,19 +124,25 @@
               "type": "p",
               "content": "Spatial Canvas",
               "position": {
-                "x": 440,
+                "x": 600,
                 "y": 440
               },
               "connections": [
                 {
                   "targetId": "88172656-140e-422b-8fb7-ddd26b0658e3",
                   "sourceDir": "top",
-                  "targetDir": "top"
+                  "targetDir": "top",
+                  "color": "emerald"
+                },
+                {
+                  "targetId": "992d279b-04f2-4b75-90de-19bb5144faa8",
+                  "sourceDir": "left",
+                  "targetDir": "bottom"
                 }
               ],
               "kanban": {
                 "columnId": "Pending",
-                "orderIndex": 1
+                "orderIndex": 3
               }
             },
             {
@@ -111,19 +167,15 @@
               ],
               "kanban": {
                 "columnId": "Pending",
-                "orderIndex": 2
+                "orderIndex": 4
               }
-            },
-            {
-              "id": "19d24485-3006-4968-b061-08df40d2a7e8",
-              "type": "p",
-              "content": "New Feature Idea"
             }
           ],
           "kanban": {
             "columnId": "InProgress",
             "orderIndex": 0
-          }
+          },
+          "headerTitle": "Untitled Page"
         }
       ]
     },
@@ -136,12 +188,35 @@
           "userId": "u1",
           "userName": "ADParris",
           "content": "New Feature Idea",
-          "timestamp": 1783371599660,
+          "timestamp": 1783665522092,
           "type": "STUB",
           "likes": [],
           "targetPageId": "page_1783366136291",
           "targetPageTitle": "Design Layout",
           "targetBlockId": "19d24485-3006-4968-b061-08df40d2a7e8"
+        },
+        {
+          "id": "feed_1783548325958_5lr6e0ia3",
+          "projectId": "proj_1783365937318",
+          "userId": "u1",
+          "userName": "ADParris",
+          "content": "Good morning, everyone.",
+          "timestamp": 1783548325958,
+          "type": "CHAT",
+          "likes": []
+        },
+        {
+          "id": "feed_1783555424723_3vb08gtso",
+          "projectId": "proj_1783365937318",
+          "userId": "u1",
+          "userName": "ADParris",
+          "content": "Special Note",
+          "timestamp": 1783555424723,
+          "type": "NOTE",
+          "likes": [],
+          "targetPageId": "page_1783366136291",
+          "targetPageTitle": "Design Layout",
+          "targetBlockId": "27f93c3b-ee76-45b6-a89f-d16ff1b54395"
         }
       ]
     }

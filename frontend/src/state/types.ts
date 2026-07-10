@@ -188,6 +188,7 @@ export interface Project {
 export const CommandMenus = {
   ArrowCommand: 'ARROW_COMMAND',
   BlockCommand: 'BLOCK_COMMAND',
+  UserCommand: 'USER_COMMAND',
 } as const;
 export type CommandMenusType = (typeof CommandMenus)[keyof typeof CommandMenus];
 

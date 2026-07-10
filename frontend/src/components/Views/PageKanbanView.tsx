@@ -70,10 +70,10 @@ export const PageKanbanView: React.FC = () => {
         <Card onClick={() => handleCardClick(page.id)}>
           <div className="flex items-start justify-between gap-2">
             <div className="w-full min-w-0">
-              <p className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors truncate">
+              <p className="text-xs font-semibold text-fg-muted group-hover:text-white transition-colors truncate">
                 📄 {page.title || 'Untitled Page'}
               </p>
-              <p className="text-[10px] text-slate-500 mt-1 tracking-wide">
+              <p className="text-[10px] text-fg-muted mt-1 tracking-wide">
                 Contains {page.blocks?.length || 0} production elements
               </p>
             </div>

@@ -39,7 +39,7 @@ const BlockPreviewRenderer: React.FC<BlockPreviewRendererProps> = ({
   switch (block.type) {
     case 'image':
       return (
-        <div className="w-full h-full rounded-xl bg-slate-950 overflow-hidden relative flex items-center justify-center">
+        <div className="w-full h-full rounded-xl bg-surface overflow-hidden relative flex items-center justify-center">
           <ImagePreview blockId={block.id} content={block.content} />
         </div>
       );

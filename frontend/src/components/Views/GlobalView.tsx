@@ -19,6 +19,7 @@ import Sidebar from '../Sidebar';
 import { PageBlockKanbanView } from './PageBlockKanbanView';
 import { PageKanbanView } from './PageKanbanView';
 import { ProjectDashboardView } from './ProjectDashboardView';
+import UserCommandMenu from '../Menus/UserCommandMenu';
 
 const GlobalView: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -209,6 +210,8 @@ const GlobalView: React.FC = () => {
         );
       case CommandMenus.BlockCommand:
         return <BlockCommandMenu projectId={projectId} pageId={pageId} />;
+      case CommandMenus.UserCommand:
+        return <UserCommandMenu />;
       default:
         return null;
     }
@@ -218,7 +221,7 @@ const GlobalView: React.FC = () => {
   const renderMainContent = () => {
     if (isLoading) {
       return (
-        <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        <div className="flex h-screen w-screen items-center justify-center bg-surface text-fg-muted">
           <div className="text-lg font-medium animate-pulse">
             Loading workspace...
           </div>
@@ -229,7 +232,7 @@ const GlobalView: React.FC = () => {
     if (pageId) {
       if (!activePage) {
         return (
-          <div className="flex h-full w-full items-center justify-center bg-zinc-950 text-zinc-600 text-xs italic">
+          <div className="flex h-full w-full items-center justify-center bg-surface text-fg-muted text-xs italic">
             Loading page workspace...
           </div>
         );
@@ -249,11 +252,11 @@ const GlobalView: React.FC = () => {
     }
 
     return (
-      <div className="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-1">
-        <p className="font-semibold text-slate-400">
+      <div className="flex flex-col items-center justify-center h-full text-fg-muted text-xs gap-1">
+        <p className="font-semibold text-fg-muted">
           Welcome to {namespace || 'ADParris'}'s Workspace
         </p>
-        <p className="text-slate-600">
+        <p className="text-fg-muted">
           Select a project folder from the sidebar to get rolling.
         </p>
       </div>
@@ -261,8 +264,8 @@ const GlobalView: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
-      <aside className="w-64 h-full border-r border-slate-800/60 bg-zinc-900 shrink-0">
+    <div className="flex h-screen w-screen overflow-hidden bg-surface text-fg">
+      <aside className="w-64 h-full border-r border-line bg-surface-elevated shrink-0">
         <Sidebar />
       </aside>
 
